@@ -5,15 +5,9 @@
     "EntitiesPerBatch": 100,
     "EntitiesPerUploadFile": 100,
     "LocalSaveFolder": "C:\\Catalyst\\databus",
-    "DropAndReloadIndex": false,
     "WriteTemporaryFilesToDisk": true,
     "WriteDetailedTemporaryFilesToDisk": true,
     "CompressFiles": false,
     "UploadToUrl": true,
-    "Index": "Patients2",
-    "Alias": "patients",
-    "EntityType": "patient",
-    "TopLevelKeyColumn": "KeyLevel0",
-    "UseMultipleThreads": false,
-    "KeepTemporaryLookupColumnsInOutput": true
+    "TopLevelKeyColumn": "KeyLevel0"
 }

@@ -259,7 +259,7 @@ namespace DataConverter
                     new TopLevelDataSource
                         {
                             Path = path,
-                            Key = "TODO",
+                            Key = sourceEntity.Fields.First(field => field.IsPrimaryKey).FieldName,
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
                                 await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),

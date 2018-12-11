@@ -17,170 +17,219 @@
             try
             {
                 var bindingExecution = new BindingExecution();
-                const string DatabaseName = "MyDatabase";
-                const string SchemaName = "MySchema";
+                // ReSharper disable once StringLiteralTypo
+                const string DatabaseName = "SAMHCOS";
+                // ReSharper disable once StringLiteralTypo
+                const string SchemaName = "HCOSText";
                 const int DestinationEntityId = 1;
-                const int Level0SourceEntityNewId = 2;
-                const int Level1SourceEntityNewId = 3;
-                const int Level2SourceEntityNewId = 4;
+                const int DataEntityId = 2;
+                const int PatientEntityId = 3;
+                const int VisitEntityId = 4;
+                const int VisitFacilityEntityId = 5;
 
-                const int NestedLevel0BindingId = 102;
-                const int NestedLevel1BindingId = 103;
-                const int NestedLevel2BindingId = 104;
+                const string ChildObjectType = "Binding";
+                const string BindingType = "Nested";
+
+                const string DestinationEntityName = "3GenNestedDestinationEntity";
+                const string DataEntity = "Data";
+                const string PatientEntity = "Patient";
+                const string VisitEntity = "Visit";
+                const string VisitFacilityEntity = "VisitFacility";
+
+                const int NestedDataBindingId = 102;
+                const int NestedPatientBindingId = 103;
+                const int NestedVisitBindingId = 104;
+                const int NestedVisitFacilityBindingId = 105;
+
+                const string AttributeGenerationGap = "GenerationGap";
+                const string AttributeParentKeyFields = "ParentKeyFields";
+                const string AttributeChildKeyFields = "ChildKeyFields";
+                const string AttributeCardinality = "Cardinality";
+                const string AttributeValueSingleObject = "SingleObject";
+
+                const string PatientKey = "PatientKEY";
+                const string VisitKey = "VisitKEY";
+                const string VisitFacilityKey = "VisitFacilityKEY";
 
                 var entities = new List<Entity>
                                     {
                                         new Entity
                                             {
                                                 Id = DestinationEntityId,
-                                                EntityName = "3GenNestedDestinationEntity",
+                                                EntityName = DestinationEntityName,
                                                 DatabaseName = DatabaseName,
                                                 SchemaName = SchemaName
                                             },
                                         new Entity
                                             {
-                                                Id = Level0SourceEntityNewId,
-                                                EntityName = "Level0Entity",
+                                                Id = DataEntityId,
+                                                EntityName = DataEntity,
                                                 DatabaseName = DatabaseName,
                                                 SchemaName = SchemaName
                                             },
                                         new Entity
                                             {
-                                                Id = Level1SourceEntityNewId,
-                                                EntityName = "Level1Entity",
+                                                Id = PatientEntityId,
+                                                EntityName = PatientEntity,
                                                 DatabaseName = DatabaseName,
                                                 SchemaName = SchemaName
                                             },
                                         new Entity
                                             {
-                                                Id = Level2SourceEntityNewId,
-                                                EntityName = "Level2Entity",
+                                                Id = VisitEntityId,
+                                                EntityName = VisitEntity,
+                                                DatabaseName = DatabaseName,
+                                                SchemaName = SchemaName
+                                            },
+                                        new Entity
+                                            {
+                                                Id = VisitFacilityEntityId,
+                                                EntityName = VisitFacilityEntity,
                                                 DatabaseName = DatabaseName,
                                                 SchemaName = SchemaName
                                             }
                                     };
-            
+
+                entities.First(entity => entity.Id == DataEntityId).Fields
+                    .Add(new Field { IsPrimaryKey = true, FieldName = "TextKEY" });
+
                 var bindings = new List<Binding>
                                     {
                                         new Binding
                                             {
-                                                Id = NestedLevel0BindingId,
+                                                Id = NestedDataBindingId,
                                                 DestinationEntityId = DestinationEntityId,
                                                 ContentId = Guid.NewGuid(),
                                                 Classification = "Generic",
-                                                Name = "NestedBindingLevel0Source",
-                                                BindingType = "Nested",
+                                                Name = "NestedBinding" + DataEntity,
+                                                BindingType = BindingType,
                                                 Status = "Active",
                                                 LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = Level0SourceEntityNewId } }
+                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = DataEntityId } }
                                             },
                                         new Binding
                                             {
-                                                Id = NestedLevel1BindingId,
+                                                Id = NestedPatientBindingId,
                                                 DestinationEntityId = DestinationEntityId,
                                                 ContentId = Guid.NewGuid(),
                                                 Classification = "Generic",
-                                                Name = "NestedBindingLevel1Source",
-                                                BindingType = "Nested",
+                                                Name = "NestedBinding" + PatientEntity,
+                                                BindingType = BindingType,
                                                 Status = "Active",
                                                 LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = Level1SourceEntityNewId } }
+                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = PatientEntityId } }
                                             },
                                         new Binding
                                             {
-                                                Id = NestedLevel2BindingId,
+                                                Id = NestedVisitBindingId,
                                                 DestinationEntityId = DestinationEntityId,
                                                 ContentId = Guid.NewGuid(),
                                                 Classification = "Generic",
-                                                Name = "NestedBindingLevel2Source",
-                                                BindingType = "Nested",
+                                                Name = "NestedBinding" + VisitEntity,
+                                                BindingType = BindingType,
                                                 Status = "Active",
                                                 LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = Level2SourceEntityNewId } }
+                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitEntityId } }
+                                            },
+                                        new Binding
+                                            {
+                                                Id = NestedVisitFacilityBindingId,
+                                                DestinationEntityId = DestinationEntityId,
+                                                ContentId = Guid.NewGuid(),
+                                                Classification = "Generic",
+                                                Name = "NestedBinding" + VisitFacilityEntity,
+                                                BindingType = BindingType,
+                                                Status = "Active",
+                                                LoadTypeCode = "Full",
+                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitFacilityEntityId } }
                                             }
                                     };
 
-                bindings.First(binding => binding.Id == NestedLevel0BindingId).ObjectRelationships.Add(
+                // relate Data to Patient on PatientKEY
+                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
                         {
-                            ChildObjectType = "Binding",
-                            ChildObjectId = NestedLevel1BindingId,
+                            ChildObjectType = ChildObjectType,
+                            ChildObjectId = NestedPatientBindingId,
                             AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "GenerationGap", AttributeValue = "1"
+                                                              AttributeName = AttributeGenerationGap, AttributeValue = "1"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ParentKeyFields",
-                                                              AttributeValue = "[\"id0\"]"
+                                                              AttributeName = AttributeParentKeyFields,
+                                                              AttributeValue = $"[\"{PatientKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ChildKeyFields",
-                                                              AttributeValue = "[\"id0\"]"
+                                                              AttributeName = AttributeChildKeyFields,
+                                                              AttributeValue = $"[\"{PatientKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "Cardinality",
-                                                              AttributeValue = "SingleObject"
+                                                              AttributeName = AttributeCardinality,
+                                                              AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
                         });
-                bindings.First(binding => binding.Id == NestedLevel0BindingId).ObjectRelationships.Add(
+
+                // relate Data to Visit on VisitKEY
+                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
                         {
-                            ChildObjectType = "Binding",
-                            ChildObjectId = NestedLevel2BindingId,
+                            ChildObjectType = ChildObjectType,
+                            ChildObjectId = NestedVisitBindingId,
                             AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "GenerationGap", AttributeValue = "2"
+                                                              AttributeName = AttributeGenerationGap, AttributeValue = "1"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ParentKeyFields",
-                                                              AttributeValue = "[\"id0\"]"
+                                                              AttributeName = AttributeParentKeyFields,
+                                                              AttributeValue = $"[\"{VisitKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ChildKeyFields",
-                                                              AttributeValue = "[\"id0\"]"
+                                                              AttributeName = AttributeChildKeyFields,
+                                                              AttributeValue = $"[\"{VisitKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "Cardinality",
-                                                              AttributeValue = "SingleObject"
+                                                              AttributeName = AttributeCardinality,
+                                                              AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
                         });
-                bindings.First(binding => binding.Id == NestedLevel1BindingId).ObjectRelationships.Add(
+
+                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
                         {
-                            ChildObjectType = "Binding",
-                            ChildObjectId = NestedLevel2BindingId,
+                            ChildObjectType = ChildObjectType,
+                            ChildObjectId = NestedVisitFacilityBindingId,
                             AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "GenerationGap", AttributeValue = "1"
+                                                              AttributeName = AttributeGenerationGap, AttributeValue = "2"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ParentKeyFields",
-                                                              AttributeValue = "[\"id1\"]"
+                                                              AttributeName = AttributeParentKeyFields,
+                                                              AttributeValue = $"[\"{VisitFacilityKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "ChildKeyFields",
-                                                              AttributeValue = "[\"id1\"]"
+                                                              AttributeName = AttributeChildKeyFields,
+                                                              AttributeValue = $"[\"{VisitFacilityKey}\"]"
                                                           },
                                                       new ObjectAttributeValue
                                                           {
-                                                              AttributeName = "Cardinality",
-                                                              AttributeValue = "SingleObject"
+                                                              AttributeName = AttributeCardinality,
+                                                              AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
                         });
@@ -195,7 +244,8 @@
                     bindingExecution,
                     bindings[0],
                     entities[0],
-                    CancellationToken.None);
+                    CancellationToken.None)
+                    .Result;
             }
             catch (Exception e)
             {
