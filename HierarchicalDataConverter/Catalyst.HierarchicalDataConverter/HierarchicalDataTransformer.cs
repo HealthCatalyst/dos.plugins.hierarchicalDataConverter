@@ -23,7 +23,7 @@ namespace DataConverter
 
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
-    using Fabric.Databus.Interfaces.Http;
+    using Fabric.Shared.ReliableHttp.Interfaces;
 
     using Newtonsoft.Json;
 
