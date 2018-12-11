@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalyst.HierarchicalDataConverter", "Catalyst.HierarchicalDataConverter\Catalyst.HierarchicalDataConverter.csproj", "{49554669-B70D-4181-84A5-FF74C4E4DC19}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalyst.PluginTester", "Catalyst.PluginTester\Catalyst.PluginTester.csproj", "{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{49554669-B70D-4181-84A5-FF74C4E4DC19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49554669-B70D-4181-84A5-FF74C4E4DC19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49554669-B70D-4181-84A5-FF74C4E4DC19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

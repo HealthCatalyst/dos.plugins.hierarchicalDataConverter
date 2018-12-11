@@ -91,7 +91,7 @@ namespace DataConverter
                 var jobData = await this.GetJobData(binding, entity);
                 LoggingHelper2.Debug(this.guid, $"JobData: {JsonConvert.SerializeObject(jobData)}");
 
-                // this.RunDatabus(config, jobData);
+                this.RunDatabus(config, jobData);
             }
             catch (Exception e)
             {
@@ -186,7 +186,9 @@ namespace DataConverter
 
             await this.GenerateDataSources(binding, allBindings, destinationEntity, dataSources, null, "$", isFirst: true);
 
-            jobData.MyDataSources = dataSources;
+            var jobDataTopLevelDataSource = dataSources.First();
+            jobData.TopLevelDataSource = jobDataTopLevelDataSource as TopLevelDataSource;
+            jobData.MyDataSources = dataSources.Skip(1).ToList();
 
             return jobData;
         }
@@ -202,7 +204,7 @@ namespace DataConverter
             var job = new Job
                           {
                               Config = config,
-                              Data = jobData
+                              Data = jobData,
                           };
             try
             {
@@ -251,16 +253,34 @@ namespace DataConverter
         {
             var sourceEntity = await this.GetEntityFromBinding(rootBinding);
             LoggingHelper2.Debug(this.guid, $"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
-            dataSources.Add(
-                new DataSource
-                    {
-                        Path = path,
-                        TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
-                        MySqlEntityColumnMappings =
-                            await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
-                        PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
-                        MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
-                    });
+            if (isFirst)
+            {
+                dataSources.Add(
+                    new TopLevelDataSource
+                        {
+                            Path = path,
+                            Key = "TODO",
+                            TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
+                            MySqlEntityColumnMappings =
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                            PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
+                            MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
+                        });
+            }
+            else
+            {
+                dataSources.Add(
+                    new DataSource
+                        {
+                            Path = path,
+                            TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
+                            MySqlEntityColumnMappings =
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                            PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
+                            MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
+                        });
+            }
+
 
             var childObjectRelationships = this.GetChildObjectRelationships(rootBinding);
             var hasChildren = childObjectRelationships.Count > 0;
