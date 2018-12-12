@@ -11,7 +11,9 @@ namespace DataConverter
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -23,7 +25,7 @@ namespace DataConverter
 
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
-    using Fabric.Databus.Interfaces.Http;
+    using Fabric.Shared.ReliableHttp.Interfaces;
 
     using Newtonsoft.Json;
 
@@ -91,7 +93,7 @@ namespace DataConverter
                 var jobData = await this.GetJobData(binding, entity);
                 LoggingHelper2.Debug(this.guid, $"JobData: {JsonConvert.SerializeObject(jobData)}");
 
-                // this.RunDatabus(config, jobData);
+                this.RunDatabus(config, jobData);
             }
             catch (Exception e)
             {
@@ -148,7 +150,9 @@ namespace DataConverter
 
         private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
         {
-            var json = System.IO.File.ReadAllText(filePath);
+            var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var fullPath = Path.Combine(directoryName, filePath);
+            var json = File.ReadAllText(fullPath);
             var deserialized = (dynamic)JsonConvert.DeserializeObject(json);
 
             var queryConfig = new QueryConfig
@@ -159,16 +163,9 @@ namespace DataConverter
                                       EntitiesPerBatch = deserialized.EntitiesPerBatch,
                                       EntitiesPerUploadFile = deserialized.EntitiesPerUploadFile,
                                       LocalSaveFolder = deserialized.LocalSaveFolder,
-                                      DropAndReloadIndex = deserialized.DropAndReloadIndex,
                                       WriteTemporaryFilesToDisk = deserialized.WriteTemporaryFilesToDisk,
                                       WriteDetailedTemporaryFilesToDisk = deserialized.WriteDetailedTemporaryFilesToDisk,
-                                      CompressFiles = deserialized.CompressFiles,
-                                      UploadToUrl = deserialized.UploadToUrl,
-                                      Index = deserialized.Index,
-                                      Alias = deserialized.Alias,
-                                      EntityType = deserialized.EntityType,
-                                      UseMultipleThreads = deserialized.UseMultipleThreads,
-                                      KeepTemporaryLookupColumnsInOutput = deserialized.KeepTemporaryLookupColumnsInOutput
+                                      UploadToUrl = deserialized.UploadToUrl
                                   };
 
             return queryConfig;
@@ -186,7 +183,9 @@ namespace DataConverter
 
             await this.GenerateDataSources(binding, allBindings, destinationEntity, dataSources, null, "$", isFirst: true);
 
-            jobData.MyDataSources = dataSources;
+            var jobDataTopLevelDataSource = dataSources.First();
+            jobData.TopLevelDataSource = jobDataTopLevelDataSource as TopLevelDataSource;
+            jobData.MyDataSources = dataSources.ToList();
 
             return jobData;
         }
@@ -202,7 +201,7 @@ namespace DataConverter
             var job = new Job
                           {
                               Config = config,
-                              Data = jobData
+                              Data = jobData,
                           };
             try
             {
@@ -251,16 +250,34 @@ namespace DataConverter
         {
             var sourceEntity = await this.GetEntityFromBinding(rootBinding);
             LoggingHelper2.Debug(this.guid, $"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
-            dataSources.Add(
-                new DataSource
-                    {
-                        Path = path,
-                        TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
-                        MySqlEntityColumnMappings =
-                            await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
-                        PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
-                        MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
-                    });
+            if (isFirst)
+            {
+                dataSources.Add(
+                    new TopLevelDataSource
+                        {
+                            Path = path,
+                            Key = sourceEntity.Fields.First(field => field.IsPrimaryKey).FieldName,
+                            TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
+                            MySqlEntityColumnMappings =
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                            PropertyType = null,
+                            MyRelationships = new List<SqlRelationship>()
+                        });
+            }
+            else
+            {
+                dataSources.Add(
+                    new DataSource
+                        {
+                            Path = path,
+                            TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
+                            MySqlEntityColumnMappings =
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                            PropertyType = this.GetCardinalityFromObjectReference(relationshipToParent),
+                            MyRelationships = await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
+                        });
+            }
+
 
             var childObjectRelationships = this.GetChildObjectRelationships(rootBinding);
             var hasChildren = childObjectRelationships.Count > 0;

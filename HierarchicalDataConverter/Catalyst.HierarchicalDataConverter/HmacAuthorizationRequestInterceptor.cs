@@ -1,13 +1,12 @@
-﻿using System;
-
-namespace DataConverter
+﻿namespace DataConverter
 {
+    using System;
     using System.Linq;
     using System.Net.Http;
     using System.Security.Cryptography;
     using System.Text;
 
-    using Fabric.Databus.Interfaces.Http;
+    using Fabric.Shared.ReliableHttp.Interfaces;
 
     public class HmacAuthorizationRequestInterceptor : IHttpRequestInterceptor
     {
