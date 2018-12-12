@@ -159,16 +159,9 @@ namespace DataConverter
                                       EntitiesPerBatch = deserialized.EntitiesPerBatch,
                                       EntitiesPerUploadFile = deserialized.EntitiesPerUploadFile,
                                       LocalSaveFolder = deserialized.LocalSaveFolder,
-                                      DropAndReloadIndex = deserialized.DropAndReloadIndex,
                                       WriteTemporaryFilesToDisk = deserialized.WriteTemporaryFilesToDisk,
                                       WriteDetailedTemporaryFilesToDisk = deserialized.WriteDetailedTemporaryFilesToDisk,
-                                      CompressFiles = deserialized.CompressFiles,
-                                      UploadToUrl = deserialized.UploadToUrl,
-                                      Index = deserialized.Index,
-                                      Alias = deserialized.Alias,
-                                      EntityType = deserialized.EntityType,
-                                      UseMultipleThreads = deserialized.UseMultipleThreads,
-                                      KeepTemporaryLookupColumnsInOutput = deserialized.KeepTemporaryLookupColumnsInOutput
+                                      UploadToUrl = deserialized.UploadToUrl
                                   };
 
             return queryConfig;
@@ -188,7 +181,7 @@ namespace DataConverter
 
             var jobDataTopLevelDataSource = dataSources.First();
             jobData.TopLevelDataSource = jobDataTopLevelDataSource as TopLevelDataSource;
-            jobData.MyDataSources = dataSources.Skip(1).ToList();
+            jobData.MyDataSources = dataSources.ToList();
 
             return jobData;
         }
@@ -210,7 +203,7 @@ namespace DataConverter
             {
                 // TODO: Get the authentication appId and secret from the database
                 var container = new UnityContainer();
-                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
+                // container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
             }
@@ -263,8 +256,8 @@ namespace DataConverter
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
                                 await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
-                            PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
-                            MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
+                            PropertyType = null,
+                            MyRelationships = new List<SqlRelationship>()
                         });
             }
             else
@@ -276,8 +269,8 @@ namespace DataConverter
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
                                 await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
-                            PropertyType = isFirst ? null : this.GetCardinalityFromObjectReference(relationshipToParent),
-                            MyRelationships = isFirst ? null : await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
+                            PropertyType = this.GetCardinalityFromObjectReference(relationshipToParent),
+                            MyRelationships = await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
                         });
             }
 
