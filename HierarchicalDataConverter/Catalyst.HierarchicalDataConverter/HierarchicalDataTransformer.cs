@@ -203,7 +203,7 @@ namespace DataConverter
             {
                 // TODO: Get the authentication appId and secret from the database
                 var container = new UnityContainer();
-                // container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
+                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
             }

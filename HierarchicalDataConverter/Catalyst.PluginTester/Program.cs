@@ -10,6 +10,8 @@
 
     using DataConverter;
 
+    using Unity.Interception.Utilities;
+
     public class Program
     {
         public static void Main(string[] args)
@@ -31,10 +33,10 @@
                 const string BindingType = "Nested";
 
                 const string DestinationEntityName = "3GenNestedDestinationEntity";
-                const string DataEntity = "Data";
-                const string PatientEntity = "Patient";
-                const string VisitEntity = "Visit";
-                const string VisitFacilityEntity = "VisitFacility";
+                const string DataEntityName = "Data";
+                const string PatientEntityName = "Patient";
+                const string VisitEntityName = "Visit";
+                const string VisitFacilityEntityName = "VisitFacility";
 
                 const int NestedDataBindingId = 102;
                 const int NestedPatientBindingId = 103;
@@ -51,107 +53,142 @@
                 const string VisitKey = "VisitKEY";
                 const string VisitFacilityKey = "VisitFacilityKEY";
 
-                var entities = new List<Entity>
-                                    {
-                                        new Entity
-                                            {
-                                                Id = DestinationEntityId,
-                                                EntityName = DestinationEntityName,
-                                                DatabaseName = DatabaseName,
-                                                SchemaName = SchemaName
-                                            },
-                                        new Entity
-                                            {
-                                                Id = DataEntityId,
-                                                EntityName = DataEntity,
-                                                DatabaseName = DatabaseName,
-                                                SchemaName = SchemaName
-                                            },
-                                        new Entity
-                                            {
-                                                Id = PatientEntityId,
-                                                EntityName = PatientEntity,
-                                                DatabaseName = DatabaseName,
-                                                SchemaName = SchemaName
-                                            },
-                                        new Entity
-                                            {
-                                                Id = VisitEntityId,
-                                                EntityName = VisitEntity,
-                                                DatabaseName = DatabaseName,
-                                                SchemaName = SchemaName
-                                            },
-                                        new Entity
-                                            {
-                                                Id = VisitFacilityEntityId,
-                                                EntityName = VisitFacilityEntity,
-                                                DatabaseName = DatabaseName,
-                                                SchemaName = SchemaName
-                                            }
-                                    };
+                var dataMart = new DataMart();
+                dataMart.Entities.Add(new Entity
+                {
+                    Id = DestinationEntityId,
+                    EntityName = DestinationEntityName,
+                    DatabaseName = DatabaseName,
+                    SchemaName = SchemaName
+                });
+                dataMart.Entities.Add(new Entity
+                {
+                    Id = DataEntityId,
+                    EntityName = DataEntityName,
+                    DatabaseName = DatabaseName,
+                    SchemaName = SchemaName
+                });
+                dataMart.Entities.Add(new Entity
+                {
+                    Id = PatientEntityId,
+                    EntityName = PatientEntityName,
+                    DatabaseName = DatabaseName,
+                    SchemaName = SchemaName
+                });
+                dataMart.Entities.Add(new Entity
+                {
+                    Id = VisitEntityId,
+                    EntityName = VisitEntityName,
+                    DatabaseName = DatabaseName,
+                    SchemaName = SchemaName
+                });
+                dataMart.Entities.Add(new Entity
+                {
+                    Id = VisitFacilityEntityId,
+                    EntityName = VisitFacilityEntityName,
+                    DatabaseName = DatabaseName,
+                    SchemaName = SchemaName
+                });
 
-                entities.First(entity => entity.Id == DataEntityId).Fields
-                    .Add(new Field { IsPrimaryKey = true, FieldName = "TextKEY" });
+                var dataEntity = dataMart.Entities.First(entity => entity.Id == DataEntityId);
+                dataEntity.Fields.Add(new Field { IsPrimaryKey = true, FieldName = "TextKEY" });
+                dataEntity.Fields.Add(new Field { FieldName = "root" });
+                dataEntity.Fields.Add(new Field { FieldName = "extension" });
+                dataEntity.Fields.Add(new Field { FieldName = "extension_suffix" });
+                dataEntity.Fields.Add(new Field { FieldName = "data" });
+                dataEntity.Fields.Add(new Field { FieldName = "base64_data" });
+                dataEntity.Fields.Add(new Field { FieldName = "data_format" });
+                dataEntity.Fields.Add(new Field { FieldName = "source_last_modified_at" });
+                dataEntity.Fields.Add(new Field { FieldName = "source_versioned_at" });
 
-                var bindings = new List<Binding>
-                                    {
-                                        new Binding
-                                            {
-                                                Id = NestedDataBindingId,
-                                                DestinationEntityId = DestinationEntityId,
-                                                ContentId = Guid.NewGuid(),
-                                                Classification = "Generic",
-                                                Name = "NestedBinding" + DataEntity,
-                                                BindingType = BindingType,
-                                                Status = "Active",
-                                                LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = DataEntityId } }
-                                            },
-                                        new Binding
-                                            {
-                                                Id = NestedPatientBindingId,
-                                                DestinationEntityId = DestinationEntityId,
-                                                ContentId = Guid.NewGuid(),
-                                                Classification = "Generic",
-                                                Name = "NestedBinding" + PatientEntity,
-                                                BindingType = BindingType,
-                                                Status = "Active",
-                                                LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = PatientEntityId } }
-                                            },
-                                        new Binding
-                                            {
-                                                Id = NestedVisitBindingId,
-                                                DestinationEntityId = DestinationEntityId,
-                                                ContentId = Guid.NewGuid(),
-                                                Classification = "Generic",
-                                                Name = "NestedBinding" + VisitEntity,
-                                                BindingType = BindingType,
-                                                Status = "Active",
-                                                LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitEntityId } }
-                                            },
-                                        new Binding
-                                            {
-                                                Id = NestedVisitFacilityBindingId,
-                                                DestinationEntityId = DestinationEntityId,
-                                                ContentId = Guid.NewGuid(),
-                                                Classification = "Generic",
-                                                Name = "NestedBinding" + VisitFacilityEntity,
-                                                BindingType = BindingType,
-                                                Status = "Active",
-                                                LoadTypeCode = "Full",
-                                                SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitFacilityEntityId } }
-                                            }
-                                    };
+                var patientEntity = dataMart.Entities.First(entity => entity.Id == PatientEntityId);
+                patientEntity.Fields.Add(new Field { FieldName = "extension" });
+                patientEntity.Fields.Add(new Field { FieldName = "root" });
+                patientEntity.Fields.Add(new Field { FieldName = "last_name" });
+                patientEntity.Fields.Add(new Field { FieldName = "first_name" });
+                patientEntity.Fields.Add(new Field { FieldName = "middle_name" });
+                patientEntity.Fields.Add(new Field { FieldName = "gender" });
+                patientEntity.Fields.Add(new Field { FieldName = "date_of_birth" });
+
+                var visitEntity = dataMart.Entities.First(entity => entity.Id == VisitEntityId);
+                visitEntity.Fields.Add(new Field { FieldName = "extension" });
+                visitEntity.Fields.Add(new Field { FieldName = "root" });
+                visitEntity.Fields.Add(new Field { FieldName = "admitted_at" });
+                visitEntity.Fields.Add(new Field { FieldName = "discharged_at" });
+
+                var visitFacilityEntity = dataMart.Entities.First(entity => entity.Id == VisitFacilityEntityId);
+                visitFacilityEntity.Fields.Add(new Field { FieldName = "extension" });
+                visitFacilityEntity.Fields.Add(new Field { FieldName = "root" });
+
+
+                var destinationEntity = dataMart.Entities.First(entity => entity.Id == DestinationEntityId);
+                destinationEntity.Fields.Add(new Field { IsPrimaryKey = true, FieldName = "TextKEY" });
+                dataEntity.Fields.ForEach(
+                    field => destinationEntity.Fields.Add(
+                        new Field { FieldName = $"{DataEntityName}_{field.FieldName}" }));
+                patientEntity.Fields.ForEach(
+                    field => destinationEntity.Fields.Add(
+                        new Field { FieldName = $"{PatientEntityName}_{field.FieldName}" }));
+                visitEntity.Fields.ForEach(
+                    field => destinationEntity.Fields.Add(
+                        new Field { FieldName = $"{VisitEntityName}_{field.FieldName}" }));
+
+                dataMart.Bindings.Add(new Binding
+                {
+                    Id = NestedDataBindingId,
+                    DestinationEntityId = DestinationEntityId,
+                    ContentId = Guid.NewGuid(),
+                    Classification = "Generic",
+                    Name = "NestedBinding" + DataEntityName,
+                    BindingType = BindingType,
+                    Status = "Active",
+                    LoadTypeCode = "Full",
+                    SourcedByEntities = { new SourceEntityReference { SourceEntityId = DataEntityId } }
+                });
+                dataMart.Bindings.Add(new Binding
+                {
+                    Id = NestedPatientBindingId,
+                    DestinationEntityId = DestinationEntityId,
+                    ContentId = Guid.NewGuid(),
+                    Classification = "Generic",
+                    Name = "NestedBinding" + PatientEntityName,
+                    BindingType = BindingType,
+                    Status = "Active",
+                    LoadTypeCode = "Full",
+                    SourcedByEntities = { new SourceEntityReference { SourceEntityId = PatientEntityId } }
+                });
+                dataMart.Bindings.Add(new Binding
+                {
+                    Id = NestedVisitBindingId,
+                    DestinationEntityId = DestinationEntityId,
+                    ContentId = Guid.NewGuid(),
+                    Classification = "Generic",
+                    Name = "NestedBinding" + VisitEntityName,
+                    BindingType = BindingType,
+                    Status = "Active",
+                    LoadTypeCode = "Full",
+                    SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitEntityId } }
+                });
+                dataMart.Bindings.Add(new Binding
+                {
+                    Id = NestedVisitFacilityBindingId,
+                    DestinationEntityId = DestinationEntityId,
+                    ContentId = Guid.NewGuid(),
+                    Classification = "Generic",
+                    Name = "NestedBinding" + VisitFacilityEntityName,
+                    BindingType = BindingType,
+                    Status = "Active",
+                    LoadTypeCode = "Full",
+                    SourcedByEntities = { new SourceEntityReference { SourceEntityId = VisitFacilityEntityId } }
+                });
 
                 // relate Data to Patient on PatientKEY
-                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
+                dataMart.Bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
-                        {
-                            ChildObjectType = ChildObjectType,
-                            ChildObjectId = NestedPatientBindingId,
-                            AttributeValues = new List<ObjectAttributeValue>
+                    {
+                        ChildObjectType = ChildObjectType,
+                        ChildObjectId = NestedPatientBindingId,
+                        AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
@@ -173,15 +210,15 @@
                                                               AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
-                        });
+                    });
 
                 // relate Data to Visit on VisitKEY
-                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
+                dataMart.Bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
-                        {
-                            ChildObjectType = ChildObjectType,
-                            ChildObjectId = NestedVisitBindingId,
-                            AttributeValues = new List<ObjectAttributeValue>
+                    {
+                        ChildObjectType = ChildObjectType,
+                        ChildObjectId = NestedVisitBindingId,
+                        AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
@@ -203,14 +240,14 @@
                                                               AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
-                        });
+                    });
 
-                bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
+                dataMart.Bindings.First(binding => binding.Id == NestedDataBindingId).ObjectRelationships.Add(
                     new ObjectReference
-                        {
-                            ChildObjectType = ChildObjectType,
-                            ChildObjectId = NestedVisitFacilityBindingId,
-                            AttributeValues = new List<ObjectAttributeValue>
+                    {
+                        ChildObjectType = ChildObjectType,
+                        ChildObjectId = NestedVisitFacilityBindingId,
+                        AttributeValues = new List<ObjectAttributeValue>
                                                   {
                                                       new ObjectAttributeValue
                                                           {
@@ -232,18 +269,16 @@
                                                               AttributeValue = AttributeValueSingleObject
                                                           }
                                                   }
-                        });
-
-                var entityFields = new List<Field> { new Field { EntityId = 1 } };
+                    });
 
                 var testMetadataServiceClient = new TestMetadataServiceClient();
-                testMetadataServiceClient.Init(entities, bindings, entityFields);
+                testMetadataServiceClient.Init(dataMart);
                 var hierarchicalDataTransformer = new HierarchicalDataTransformer(testMetadataServiceClient);
 
                 var transformDataAsync = hierarchicalDataTransformer.TransformDataAsync(
                     bindingExecution,
-                    bindings[0],
-                    entities[0],
+                    dataMart.Bindings.First(),
+                    dataMart.Entities.First(),
                     CancellationToken.None)
                     .Result;
             }

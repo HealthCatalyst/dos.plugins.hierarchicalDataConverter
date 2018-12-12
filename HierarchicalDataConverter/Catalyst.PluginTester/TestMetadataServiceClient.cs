@@ -1,5 +1,6 @@
 ﻿namespace Catalyst.PluginTester
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -7,76 +8,70 @@
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
 
+    using JetBrains.Annotations;
+
     public class TestMetadataServiceClient : IMetadataServiceClient
     {
-        private List<Binding> bindings;
+        private DataMart dataMart;
 
-        private List<Entity> entities;
-
-        private List<Field> entityFields;
-
-
-        public void Init(List<Entity> entities1, List<Binding> bindings1, List<Field> fields)
-        {
-            this.entities = entities1;
-            this.bindings = bindings1;
-            this.entityFields = fields;
-        }
+        public void Init([NotNull] DataMart dataMart1)
+         {
+             this.dataMart = dataMart1 ?? throw new ArgumentNullException(nameof(dataMart1));
+         }
 
         public Task<DataMart> GetDataMartAsync(int dataMartId, bool includeFullDataMart = false, string actingUser = null)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
-        public Task<Entity[]> GetEntitiesForDataMartAsync(int dataMartId)
+        public async Task<Entity[]> GetEntitiesForDataMartAsync(int dataMartId)
         {
-            throw new System.NotImplementedException();
+            return await Task.FromResult(this.dataMart.Entities.ToArray());
         }
 
         public async Task<Binding[]> GetBindingsForDataMartAsync(int dataMartId)
         {
-            return await Task.FromResult(this.bindings.ToArray());
+            return await Task.FromResult(this.dataMart.Bindings.ToArray());
         }
 
         public Task<Binding[]> GetBindingsForEntityAsync(int entityId)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(this.dataMart.Bindings.Where(binding => binding.DestinationEntityId == entityId).ToArray());
         }
 
         public Task<Connection> GetConnectionAsync(int connectionId)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(this.dataMart.Connections.First());
         }
 
         public Task<ObjectAttributeValue> GetSystemAttributeAsync(string attributeName)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public async Task<Field[]> GetEntityFieldsAsync(Entity entity)
         {
-            return await Task.FromResult(this.entityFields.Where(field => field.EntityId == entity.Id).ToArray());
+            return await Task.FromResult(entity.Fields.ToArray());
         }
 
         public async Task<Entity> GetEntityAsync(int entityId)
         {
-            return await Task.FromResult(this.entities.First(entity => entity.Id == entityId));
+            return await Task.FromResult(this.dataMart.Entities.First(entity => entity.Id == entityId));
         }
 
         public Task UpdateEntityAsync(Entity entity)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public Task<Binding> GetBindingAsync(int bindingId)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(this.dataMart.Bindings.First(binding => binding.Id == bindingId));
         }
 
         public Task<Resource> GetResourceAsync(int resourceId)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
-
     }
 }

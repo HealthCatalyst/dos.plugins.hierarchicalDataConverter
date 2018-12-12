@@ -8,6 +8,6 @@
     "WriteTemporaryFilesToDisk": true,
     "WriteDetailedTemporaryFilesToDisk": true,
     "CompressFiles": false,
-    "UploadToUrl": true,
+    "UploadToUrl": false,
     "TopLevelKeyColumn": "KeyLevel0"
 }
