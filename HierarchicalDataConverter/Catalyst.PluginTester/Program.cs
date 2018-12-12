@@ -5,11 +5,12 @@
     using System.Linq;
     using System.Threading;
 
+    using Catalyst.DataProcessing.Engine.PluginInterfaces;
     using Catalyst.DataProcessing.Shared.Models.DataProcessing;
     using Catalyst.DataProcessing.Shared.Models.Metadata;
+    using Catalyst.DataProcessing.Shared.Utilities.Client;
 
-    using DataConverter;
-
+    using Unity;
     using Unity.Interception.Utilities;
 
     public class Program
@@ -271,9 +272,17 @@
                                                   }
                     });
 
+                var unityContainer = new UnityContainer();
+
                 var testMetadataServiceClient = new TestMetadataServiceClient();
                 testMetadataServiceClient.Init(dataMart);
-                var hierarchicalDataTransformer = new HierarchicalDataTransformer(testMetadataServiceClient);
+                unityContainer.RegisterInstance<IMetadataServiceClient>(testMetadataServiceClient);
+
+                var pluginLoader = new PluginLoader();
+                pluginLoader.LoadPlugins();
+                pluginLoader.RegisterPlugins(unityContainer);
+
+                var hierarchicalDataTransformer = pluginLoader.GetPluginOfExactType<IDataTransformer>("HierarchicalDataTransformer");
 
                 var transformDataAsync = hierarchicalDataTransformer.TransformDataAsync(
                     bindingExecution,

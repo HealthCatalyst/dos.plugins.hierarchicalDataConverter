@@ -229,4 +229,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if not exist "$(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins" mkdir $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins
+copy $(TargetDir)\* $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\</PostBuildEvent>
+  </PropertyGroup>
 </Project>

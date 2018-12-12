@@ -11,7 +11,9 @@ namespace DataConverter
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -148,7 +150,9 @@ namespace DataConverter
 
         private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
         {
-            var json = System.IO.File.ReadAllText(filePath);
+            var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var fullPath = Path.Combine(directoryName, filePath);
+            var json = File.ReadAllText(fullPath);
             var deserialized = (dynamic)JsonConvert.DeserializeObject(json);
 
             var queryConfig = new QueryConfig
