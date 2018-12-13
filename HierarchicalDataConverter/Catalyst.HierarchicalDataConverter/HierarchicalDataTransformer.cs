@@ -36,12 +36,15 @@ namespace DataConverter
     /// </summary>
     public class HierarchicalDataTransformer : IDataTransformer
     {
+        private const string NestedBindingTypeName = "Nested";
+        private const string PluginFolderName = "HierarchicalDataConverter"; // Plugin must be placed in this folder within the Plugins folder
+        private const string SourceEntitySourceColumnSeparator = "__";
+
         /// <summary>
         /// The helper.
         /// </summary>
         private readonly IMetadataServiceClient metadataServiceClient;
 
-        private readonly Guid guid;
         private readonly DatabusRunner runner;
 
         /// <summary>
@@ -54,10 +57,9 @@ namespace DataConverter
         {
             this.metadataServiceClient = metadataServiceClient ?? throw new ArgumentException("metadataServiceClient cannot be null.");
 
-            this.guid = Guid.NewGuid();
             this.runner = new DatabusRunner();
 
-            LoggingHelper2.Debug(this.guid, "We Got Here: HierarchicalDataTransformer!");
+            LoggingHelper2.Debug("We Got Here: HierarchicalDataTransformer!");
         }
 
         /// <summary>
@@ -86,18 +88,18 @@ namespace DataConverter
         {
             try
             {
-                LoggingHelper2.Debug(this.guid, "In TransformDataAsync()");
+                LoggingHelper2.Debug("In TransformDataAsync()");
                 var config = this.GetQueryConfigFromJsonFile();
-                LoggingHelper2.Debug(this.guid, $"Configuration: {JsonConvert.SerializeObject(config)}");
+                LoggingHelper2.Debug($"Configuration: {JsonConvert.SerializeObject(config)}");
 
                 var jobData = await this.GetJobData(binding, entity);
-                LoggingHelper2.Debug(this.guid, $"JobData: {JsonConvert.SerializeObject(jobData)}");
+                LoggingHelper2.Debug($"JobData: {JsonConvert.SerializeObject(jobData)}");
 
                 this.RunDatabus(config, jobData);
             }
             catch (Exception e)
             {
-                LoggingHelper2.Debug(this.guid, $"TransformDataAsync Threw exception: {e}");
+                LoggingHelper2.Debug($"TransformDataAsync Threw exception: {e}");
             }
 
             return Convert.ToInt64(1);
@@ -112,8 +114,6 @@ namespace DataConverter
         /// <returns></returns>
         public bool CanHandle(BindingExecution bindingExecution, Binding binding, Entity destinationEntity)
         {
-            //LoggingHelper2.Debug(this.guid, "We got to the CanHandle Method");
-
             var guid2 = Guid.NewGuid();
 
             Binding topMost;
@@ -121,27 +121,23 @@ namespace DataConverter
             {
                 Binding[] allBindings = this.GetBindingsForEntityAsync(destinationEntity).Result;
                 topMost = this.GetTopMostBinding(allBindings);
-                //LoggingHelper2.Debug(this.guid, $"All bindings ({guid2.ToString().Substring(0, 10)}): {JsonConvert.SerializeObject(allBindings)}");
-                //LoggingHelper2.Debug(this.guid, $"binding ({guid2.ToString().Substring(0, 10)}): {JsonConvert.SerializeObject(binding)}");
-                //LoggingHelper2.Debug(this.guid, $"TopMost ({guid2.ToString().Substring(0, 10)}): {JsonConvert.SerializeObject(topMost)}");
-                //LoggingHelper2.Debug(this.guid, $"Is topmost?? ({guid2.ToString().Substring(0, 10)}): {binding.Id == topMost.Id}");
             }
             catch (Exception e)
             {
-                LoggingHelper2.Debug(this.guid, $"Threw exception ({guid2.ToString().Substring(0, 10)}): {e}");
+                LoggingHelper2.Debug($"Threw exception ({guid2.ToString().Substring(0, 10)}): {e}");
                 throw;
             }
 
             // check the binding to see whether it has a destination entity
             // where it has an endpoint attribute, httpverb
-            return binding.BindingType == "Nested" && binding.Id == topMost.Id; // BindingType.
+            return binding.BindingType == NestedBindingTypeName && binding.Id == topMost.Id; // BindingType.
         }
 
         private Binding GetTopMostBinding(Binding[] bindings)
         {
             if (bindings == null || bindings.Length == 0)
             {
-                LoggingHelper2.Debug(this.guid, "ERROR - Throwing exception: Could not get top most binding from a list with no bindings");
+                LoggingHelper2.Debug("ERROR - Throwing exception: Could not get top most binding from a list with no bindings");
                 throw new InvalidOperationException("Could not get top most binding from a list with no bindings");
             }
 
@@ -151,7 +147,13 @@ namespace DataConverter
         private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
         {
             var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var fullPath = Path.Combine(directoryName, filePath);
+
+            if (directoryName == null)
+            {
+                throw new InvalidOperationException("Could not find plugin configuration file base path.");
+            }
+
+            var fullPath = Path.Combine(directoryName, "Plugins", PluginFolderName, filePath);
             var json = File.ReadAllText(fullPath);
             var deserialized = (dynamic)JsonConvert.DeserializeObject(json);
 
@@ -197,7 +199,7 @@ namespace DataConverter
         /// <param name="jobData"></param>
         private void RunDatabus(QueryConfig config, JobData jobData)
         {
-            LoggingHelper2.Debug(this.guid, "We are trying to run Databus");
+            LoggingHelper2.Debug("We are trying to run Databus");
             var job = new Job
                           {
                               Config = config,
@@ -213,10 +215,10 @@ namespace DataConverter
             }
             catch (Exception e)
             {
-                LoggingHelper2.Debug(this.guid, $"Exception thrown by Databus: {e}");
+                LoggingHelper2.Debug($"Exception thrown by Databus: {e}");
             }
 
-            LoggingHelper2.Debug(this.guid, "Finished executing Databus");
+            LoggingHelper2.Debug("Finished executing Databus");
         }
 
         private void ValidateHierarchicalBinding(Binding binding, Binding[] allBindings)
@@ -249,7 +251,7 @@ namespace DataConverter
             bool isFirst)
         {
             var sourceEntity = await this.GetEntityFromBinding(rootBinding);
-            LoggingHelper2.Debug(this.guid, $"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
+            LoggingHelper2.Debug($"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
             if (isFirst)
             {
                 dataSources.Add(
@@ -277,7 +279,6 @@ namespace DataConverter
                             MyRelationships = await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
                         });
             }
-
 
             var childObjectRelationships = this.GetChildObjectRelationships(rootBinding);
             var hasChildren = childObjectRelationships.Count > 0;
@@ -317,8 +318,8 @@ namespace DataConverter
             {
                 Entity ancestorEntity = await this.GetEntityFromBinding(allBindings.First(b => b.Id == ancestorRelationship.ParentObjectId));
 
-                LoggingHelper2.Debug(this.guid, $"SourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
-                LoggingHelper2.Debug(this.guid, $"ancestorEntity: {JsonConvert.SerializeObject(ancestorEntity)}");
+                LoggingHelper2.Debug($"SourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
+                LoggingHelper2.Debug($"ancestorEntity: {JsonConvert.SerializeObject(ancestorEntity)}");
 
                 sqlRelationships.Add(
                     new SqlRelationship
@@ -327,13 +328,13 @@ namespace DataConverter
                                            {
                                                Entity = this.GetFullyQualifiedTableName(ancestorEntity),
                                                Key = this.CleanJson(
-                                                   ancestorRelationship.AttributeValues.GetAttributeTextValue("ParentKeyFields"))
+                                                   ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeName.ParentKeyFields))
                                            }, // TODO - databus doesn't currently handle comma separated lists here
                             MyDestination =
                                 new SqlRelationshipEntity
                                     {
                                         Entity = this.GetFullyQualifiedTableName(sourceEntity),
-                                        Key = this.CleanJson(ancestorRelationship.AttributeValues.GetAttributeTextValue("ChildKeyFields"))
+                                        Key = this.CleanJson(ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeName.ChildKeyFields))
                                     } // TODO - databus doesn't currently handle comma separated lists here
                         });
             }
@@ -343,26 +344,23 @@ namespace DataConverter
 
         private async Task<Binding[]> GetBindingsForEntityAsync(Entity entity)
         {
-            //LoggingHelper2.Debug(this.guid, "Entering GetBindingsForEntityAsync");
             var bindingsForDataMart = await this.metadataServiceClient.GetBindingsForDataMartAsync(entity.DataMartId);
-            //LoggingHelper2.Debug(this.guid, $"BindingsForDataMart[{entity.DataMartId}]: {JsonConvert.SerializeObject(bindingsForDataMart)}");
-            //LoggingHelper2.Debug(this.guid, $"BindingsForDataMart[{entity.DataMartId}] - filtered by DestEntity: {JsonConvert.SerializeObject(bindingsForDataMart.Where(binding => binding.DestinationEntityId == entity.Id).ToArray())}");
 
             return bindingsForDataMart.Where(binding => binding.DestinationEntityId == entity.Id).ToArray();
         }
 
         private string GetCardinalityFromObjectReference(ObjectReference objectReference)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetCardinalityFromObjectReference(...)");
-            LoggingHelper2.Debug(this.guid, $"objectReference: {JsonConvert.SerializeObject(objectReference)}");
-            return this.GetAttributeValueFromObjectReference(objectReference, "Cardinality").Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
+            LoggingHelper2.Debug("Entering GetCardinalityFromObjectReference(...)");
+            LoggingHelper2.Debug($"objectReference: {JsonConvert.SerializeObject(objectReference)}");
+            return this.GetAttributeValueFromObjectReference(objectReference, AttributeName.Cardinality).Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
         }
 
         private string GetAttributeValueFromObjectReference(ObjectReference objectReference, string attributeName)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetAttributeValueFromObjectReference(...)");
-            LoggingHelper2.Debug(this.guid, $"objectReference: {JsonConvert.SerializeObject(objectReference)}");
-            LoggingHelper2.Debug(this.guid, $"attributeName: {attributeName}");
+            LoggingHelper2.Debug("Entering GetAttributeValueFromObjectReference(...)");
+            LoggingHelper2.Debug($"objectReference: {JsonConvert.SerializeObject(objectReference)}");
+            LoggingHelper2.Debug($"attributeName: {attributeName}");
 
             return objectReference.AttributeValues.Where(x => x.AttributeName == attributeName)
                 .Select(x => x.AttributeValue).FirstOrDefault();
@@ -370,32 +368,32 @@ namespace DataConverter
 
         private Binding GetMatchingChild(Binding[] bindings, int childBindingId)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetMatchingChild(...)");
+            LoggingHelper2.Debug("Entering GetMatchingChild(...)");
             return bindings.FirstOrDefault(x => x.Id == childBindingId);
         }
 
         private List<ObjectReference> GetChildObjectRelationships(Binding binding)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetChildObjectRelationships(...)");
+            LoggingHelper2.Debug("Entering GetChildObjectRelationships(...)");
             var childRelationships = binding.ObjectRelationships.Where(
-                    or => or.ChildObjectType == "Binding"
-                          && or.AttributeValues.First(attr => attr.AttributeName == "GenerationGap").ValueToInt()
+                    or => or.ChildObjectType == MetadataObjectType.Binding
+                          && or.AttributeValues.First(attr => attr.AttributeName == AttributeName.GenerationGap).ValueToInt()
                           == 1)
                 .ToList();
 
-            LoggingHelper2.Debug(this.guid, $"Found the following childRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(childRelationships)}");
+            LoggingHelper2.Debug($"Found the following childRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(childRelationships)}");
             return childRelationships;
         }
 
         private List<BindingReference> GetAncestorObjectRelationships(Binding binding, Binding[] allBindings)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetAncestorObjectRelationships(...)");
+            LoggingHelper2.Debug("Entering GetAncestorObjectRelationships(...)");
             var parentRelationships = new List<BindingReference>();
             foreach (var otherBinding in allBindings.Where(b => b.Id != binding.Id))
             {
                 parentRelationships.AddRange(
                     otherBinding.ObjectRelationships.Where(
-                        relationship => relationship.ChildObjectId == binding.Id && relationship.ChildObjectType == "Binding").Select(
+                        relationship => relationship.ChildObjectId == binding.Id && relationship.ChildObjectType == MetadataObjectType.Binding).Select(
                         x => new BindingReference
                         {
                             ChildObjectId = x.ChildObjectId,
@@ -405,15 +403,15 @@ namespace DataConverter
                         }));
             }
 
-            LoggingHelper2.Debug(this.guid, $"Found the following parentRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(parentRelationships)}");
+            LoggingHelper2.Debug($"Found the following parentRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(parentRelationships)}");
 
             return parentRelationships;
         }
 
         private async Task<Entity> GetEntityFromBinding(Binding binding)
         {
-            LoggingHelper2.Debug(this.guid, "Entering GetEntityFromBinding(...)");
-            LoggingHelper2.Debug(this.guid, "binding: " + JsonConvert.SerializeObject(binding));
+            LoggingHelper2.Debug("Entering GetEntityFromBinding(...)");
+            LoggingHelper2.Debug("binding: " + JsonConvert.SerializeObject(binding));
 
             if (binding == null || !binding.SourcedByEntities.Any() || binding.SourcedByEntities.FirstOrDefault() == null)
             {
@@ -422,7 +420,7 @@ namespace DataConverter
 
             var entityReference = binding.SourcedByEntities.First();
             var entity = await this.metadataServiceClient.GetEntityAsync(entityReference.SourceEntityId);
-            LoggingHelper2.Debug(this.guid, $"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
+            LoggingHelper2.Debug($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
             return entity;
         }
 
@@ -442,7 +440,7 @@ namespace DataConverter
                 sourceEntityFields
                     .Where(
                         field => destinationEntity.Fields.Any(
-                            destinationField => destinationField.FieldName == $"{sourceEntity.EntityName}_{field.FieldName}" && destinationField.Status != FieldStatus.Omitted))
+                            destinationField => destinationField.FieldName == $"{sourceEntity.EntityName}{SourceEntitySourceColumnSeparator}{field.FieldName}" && destinationField.Status != FieldStatus.Omitted))
                     .Select(f => new SqlEntityColumnMapping { Name = f.FieldName, Alias = entityAlias ?? f.FieldName }));
 
             return columns;
@@ -456,6 +454,19 @@ namespace DataConverter
         private string CleanJson(string dirty)
         {
             return dirty.Replace("[", string.Empty).Replace("]", string.Empty).Replace('"', ' ').Trim();
+        }
+
+        private static class MetadataObjectType
+        {
+            public const string Binding = "Binding";
+        }
+
+        private static class AttributeName
+        {
+            public const string Cardinality = "Cardinality";
+            public const string ParentKeyFields = "ParentKeyFields";
+            public const string ChildKeyFields = "ChildKeyFields";
+            public const string GenerationGap = "GenerationGap";
         }
     }
 }
