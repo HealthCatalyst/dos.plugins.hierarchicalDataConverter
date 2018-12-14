@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 {
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -19,8 +20,12 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
     [TestClass]
     public class GrandparentParentChildTest
     {
+        private const int DataMartId = 123;
+
+        private const int SourceConnectionId = 5342;
+
         [TestMethod]
-        public void TestMethod1()
+        public void GrandparentParentChild()
         {
             Binding[] bindings = new Binding[3]
                                      {
@@ -52,22 +57,25 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             Assert.AreEqual(3, jobData.DataSources.Count());
             var firstSource = (TopLevelDataSource)jobData.TopLevelDataSource;
             Assert.AreEqual("[MyDatabaseName].[Level0TableName].[Level0Entity]", firstSource.TableOrView);
-            Assert.AreEqual(2, firstSource.SqlEntityColumnMappings.Count());
-            Assert.AreEqual("Level0EntityPrimaryKey", firstSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual(3, firstSource.SqlEntityColumnMappings.Count());
+            Assert.AreEqual("id0", firstSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual("Level0EntityPrimaryKey", firstSource.SqlEntityColumnMappings.ElementAt(1).Name);
             Assert.AreEqual("Level0FieldToBeAdded", firstSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$", firstSource.Path);
 
             var secondSource = (DataSource)jobData.DataSources.ElementAt(1);
             Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", secondSource.TableOrView);
-            Assert.AreEqual(2, secondSource.SqlEntityColumnMappings.Count());
-            Assert.AreEqual("Level1EntityPrimaryKey", secondSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual(3, secondSource.SqlEntityColumnMappings.Count());
+            Assert.AreEqual("id1", secondSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual("Level1EntityPrimaryKey", secondSource.SqlEntityColumnMappings.ElementAt(1).Name);
             Assert.AreEqual("Level1FieldToBeAdded", secondSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$.Level1Entity", secondSource.Path);
 
             var thirdSource = (DataSource)jobData.DataSources.ElementAt(2);
             Assert.AreEqual("[MyDatabaseName].[Level2TableName].[Level2Entity]", thirdSource.TableOrView);
-            Assert.AreEqual(2, thirdSource.SqlEntityColumnMappings.Count());
-            Assert.AreEqual("Level2EntityPrimaryKey", thirdSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual(3, thirdSource.SqlEntityColumnMappings.Count());
+            Assert.AreEqual("id1", thirdSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual("Level2EntityPrimaryKey", thirdSource.SqlEntityColumnMappings.ElementAt(1).Name);
             Assert.AreEqual("Level2FieldToBeAdded", thirdSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$.Level1Entity.Level2Entity", thirdSource.Path);
 
@@ -75,12 +83,18 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Field[] GetEntity0Fields()
         {
-            return new Field[3]
+            return new Field[4]
                        {
                            new Field
                                {
-                                   FieldName = "Level0EntityPrimaryKey",
+                                   FieldName = "id0",
                                    Status = FieldStatus.Active
+                               },
+                           new Field
+                               {
+                                   FieldName = "Level0EntityPrimaryKey",
+                                   Status = FieldStatus.Active,
+                                   IsPrimaryKey = true
                                },
                            new Field
                                {
@@ -97,12 +111,18 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Field[] GetEntity1Fields()
         {
-            return new Field[3]
+            return new Field[4]
                        {
                            new Field
                                {
-                                   FieldName = "Level1EntityPrimaryKey",
+                                   FieldName = "id1",
                                    Status = FieldStatus.Active
+                               },
+                           new Field
+                               {
+                                   FieldName = "Level1EntityPrimaryKey",
+                                   Status = FieldStatus.Active,
+                                   IsPrimaryKey = true
                                },
                            new Field
                                {
@@ -119,12 +139,18 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Field[] GetEntity2Fields()
         {
-            return new Field[3]
+            return new Field[4]
                        {
                            new Field
                                {
-                                   FieldName = "Level2EntityPrimaryKey",
+                                   FieldName = "id1",
                                    Status = FieldStatus.Active
+                               },
+                           new Field
+                               {
+                                   FieldName = "Level2EntityPrimaryKey",
+                                   Status = FieldStatus.Active,
+                                   IsPrimaryKey = true
                                },
                            new Field
                                {
@@ -149,10 +175,10 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                        {
                            DestinationEntityId = destinationEntity.Id,
                            ContentId = Guid.NewGuid(),
-                           DataMartId = this.DataMartId,
+                           DataMartId = DataMartId,
                            Classification = "Generic",
                            Name = "NestedBindingLevel0Source",
-                           SourceConnectionId = this.SourceConnectionId,
+                           SourceConnectionId = SourceConnectionId,
                            BindingType = "Nested",
                            Status = "Active",
                            LoadTypeCode = "Full",
@@ -245,15 +271,14 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             var destinationEntity = this.GetNestedDestinationEntity();
             var nestedBindingLevel2 = this.GetNestedBindingLevel2Source();
             var level1SourceEntity = this.GetLevel1SourceEntity();
-            var level2SourceEntity = this.GetLevel2SourceEntity();
             return new Binding
                        {
                            DestinationEntityId = destinationEntity.Id,
                            ContentId = Guid.NewGuid(),
-                           DataMartId = this.DataMartId,
+                           DataMartId = DataMartId,
                            Classification = "Generic",
                            Name = "NestedBindingLevel1Source",
-                           SourceConnectionId = this.SourceConnectionId,
+                           SourceConnectionId = SourceConnectionId,
                            BindingType = "Nested",
                            Status = "Active",
                            LoadTypeCode = "Full",
@@ -302,16 +327,15 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
         private Binding GetNestedBindingLevel2Source()
         {
             var destinationEntity = this.GetNestedDestinationEntity();
-            var level1SourceEntity = this.GetLevel1SourceEntity();
             var level2SourceEntity = this.GetLevel2SourceEntity();
             return new Binding
                        {
                            DestinationEntityId = destinationEntity.Id,
                            ContentId = Guid.NewGuid(),
-                           DataMartId = this.DataMartId,
+                           DataMartId = DataMartId,
                            Classification = "Generic",
                            Name = "NestedBindingLevel2Source",
-                           SourceConnectionId = this.SourceConnectionId,
+                           SourceConnectionId = SourceConnectionId,
                            BindingType = "Nested",
                            Status = "Active",
                            LoadTypeCode = "Full",
@@ -331,9 +355,14 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             return new Entity
                        {
                            Id = 6357,
-                           DataMartId = this.DataMartId,
+                           DataMartId = DataMartId,
                            Fields =
                                {
+                                   new Field
+                                       {
+                                           FieldName = "Level0Entity__id0",
+                                           Status = FieldStatus.Active
+                                       },
                                    new Field
                                        {
                                            FieldName = "Level0Entity__Level0EntityPrimaryKey",
@@ -351,6 +380,16 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                                        },
                                    new Field
                                        {
+                                           FieldName = "Level1Entity__id0",
+                                           Status = FieldStatus.Active
+                                       },
+                                   new Field
+                                       {
+                                           FieldName = "Level1Entity__id1",
+                                           Status = FieldStatus.Active
+                                       },
+                                   new Field
+                                       {
                                            FieldName = "Level1Entity__Level1EntityPrimaryKey",
                                            Status = FieldStatus.Active
                                        },
@@ -362,6 +401,16 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                                    new Field
                                        {
                                            FieldName = "Level1Entity__Level1FieldToBeAdded",
+                                           Status = FieldStatus.Active
+                                       },
+                                   new Field
+                                       {
+                                           FieldName = "Level2Entity__id0",
+                                           Status = FieldStatus.Active
+                                       },
+                                   new Field
+                                       {
+                                           FieldName = "Level2Entity__id1",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
@@ -385,57 +434,60 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Entity GetLevel0SourceEntity()
         {
-            return new Entity
+            var entity = new Entity
                        {
                            Id = 0,
                            EntityName = "Level0Entity",
-                           DataMartId = this.DataMartId,
-                           Fields = { new Field { IsPrimaryKey = true, FieldName = "Level0EntityPrimaryKey" } },
+                           DataMartId = DataMartId,
                            DatabaseName = "MyDatabaseName",
                            SchemaName = "Level0TableName"
                        };
+            var fields = this.GetEntity0Fields();
+            foreach (var field in fields)
+            {
+                entity.Fields.Add(field);
+            }
+
+            return entity;
         }
 
         private Entity GetLevel1SourceEntity()
         {
-            return new Entity
+            var entity = new Entity
                        {
                            Id = 1,
                            EntityName = "Level1Entity",
-                           DataMartId = this.DataMartId,
-                           Fields = { new Field { IsPrimaryKey = true, FieldName = "Level1EntityPrimaryKey" } },
+                           DataMartId = DataMartId,
                            DatabaseName = "MyDatabaseName",
                            SchemaName = "Level1TableName"
             };
+            var fields = this.GetEntity1Fields();
+            foreach (var field in fields)
+            {
+                entity.Fields.Add(field);
+            }
+
+            return entity;
         }
 
         private Entity GetLevel2SourceEntity()
         {
-            return new Entity
+            var entity = new Entity
                        {
                            Id = 2,
                            EntityName = "Level2Entity",
-                           DataMartId = this.DataMartId,
-                           Fields = { new Field { IsPrimaryKey = true, FieldName = "Level2EntityPrimaryKey" } },
+                           DataMartId = DataMartId,
                            DatabaseName = "MyDatabaseName",
                            SchemaName = "Level2TableName"
             };
+            var fields = this.GetEntity2Fields();
+            foreach (var field in fields)
+            {
+                entity.Fields.Add(field);
+            }
+
+            return entity;
         }
 
-        private int DataMartId
-        {
-            get
-            {
-                return 123;
-            }
-        }
-
-        private int SourceConnectionId
-        {
-            get
-            {
-                return 5342;
-            }
-        }
     }
 }
