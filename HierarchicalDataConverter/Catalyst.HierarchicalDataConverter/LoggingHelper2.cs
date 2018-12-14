@@ -19,7 +19,7 @@
             {
                 lock (threadlock)
                 {
-                    LoggingHelper.Debug(message); // This is no longer working for some reason
+                    // LoggingHelper.Debug(message); // This is no longer working for some reason
                     File.AppendAllText(
                         $@"C:\Program Files\Health Catalyst\Data-Processing Engine\logs\DataProcessingEngine_PluginOnly.log",
                         $"{DateTime.Now} - HierarchicalDataTransformer: {message}\n\n");
