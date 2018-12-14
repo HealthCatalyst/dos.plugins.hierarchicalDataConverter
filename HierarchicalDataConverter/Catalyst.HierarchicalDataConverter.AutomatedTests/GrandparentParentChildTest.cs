@@ -17,7 +17,7 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
     using Moq;
 
     [TestClass]
-    public class UnitTest1
+    public class GrandparentParentChildTest
     {
         [TestMethod]
         public void TestMethod1()
@@ -336,47 +336,47 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                                {
                                    new Field
                                        {
-                                           FieldName = "Level0Entity_Level0EntityPrimaryKey",
+                                           FieldName = "Level0Entity__Level0EntityPrimaryKey",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level0Entity_Level0OmittedField",
+                                           FieldName = "Level0Entity__Level0OmittedField",
                                            Status = FieldStatus.Omitted
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level0Entity_Level0FieldToBeAdded",
+                                           FieldName = "Level0Entity__Level0FieldToBeAdded",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level1Entity_Level1EntityPrimaryKey",
+                                           FieldName = "Level1Entity__Level1EntityPrimaryKey",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level1Entity_Level1OmittedField",
+                                           FieldName = "Level1Entity__Level1OmittedField",
                                            Status = FieldStatus.Omitted
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level1Entity_Level1FieldToBeAdded",
+                                           FieldName = "Level1Entity__Level1FieldToBeAdded",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level2Entity_Level2EntityPrimaryKey",
+                                           FieldName = "Level2Entity__Level2EntityPrimaryKey",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level2Entity_Level2OmittedField",
+                                           FieldName = "Level2Entity__Level2OmittedField",
                                            Status = FieldStatus.Omitted
                                        },
                                    new Field
                                        {
-                                           FieldName = "Level2Entity_Level2FieldToBeAdded",
+                                           FieldName = "Level2Entity__Level2FieldToBeAdded",
                                            Status = FieldStatus.Active
                                        }
                                }
