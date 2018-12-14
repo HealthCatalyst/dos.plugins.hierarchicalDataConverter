@@ -231,6 +231,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if not exist "$(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins" mkdir $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins
-copy $(TargetDir)\* $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\</PostBuildEvent>
+copy $(TargetDir)\* $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\
+
+if not exist "$(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\Plugins\HierarchicalDataConverter" mkdir $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\Plugins\HierarchicalDataConverter
+copy $(TargetDir)\config.json $(SolutionDir)\Catalyst.PluginTester\bin\Debug\Plugins\Plugins\HierarchicalDataConverter\</PostBuildEvent>
   </PropertyGroup>
 </Project>
