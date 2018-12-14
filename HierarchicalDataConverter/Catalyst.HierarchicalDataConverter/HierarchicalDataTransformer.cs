@@ -252,7 +252,8 @@ namespace DataConverter
             bool isFirst)
         {
             var sourceEntity = await this.GetEntityFromBinding(rootBinding);
-            LoggingHelper2.Debug($"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
+
+            // LoggingHelper2.Debug(this.guid, $"GenerateDataSources -- sourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
             if (isFirst)
             {
                 dataSources.Add(
@@ -319,9 +320,8 @@ namespace DataConverter
             {
                 Entity ancestorEntity = await this.GetEntityFromBinding(allBindings.First(b => b.Id == ancestorRelationship.ParentObjectId));
 
-                LoggingHelper2.Debug($"SourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
-                LoggingHelper2.Debug($"ancestorEntity: {JsonConvert.SerializeObject(ancestorEntity)}");
-
+                // LoggingHelper2.Debug(this.guid, $"SourceEntity: {JsonConvert.SerializeObject(sourceEntity)}");
+                // LoggingHelper2.Debug(this.guid, $"ancestorEntity: {JsonConvert.SerializeObject(ancestorEntity)}");
                 sqlRelationships.Add(
                     new SqlRelationship
                         {
@@ -353,14 +353,14 @@ namespace DataConverter
         private string GetCardinalityFromObjectReference(ObjectReference objectReference)
         {
             LoggingHelper2.Debug("Entering GetCardinalityFromObjectReference(...)");
-            LoggingHelper2.Debug($"objectReference: {JsonConvert.SerializeObject(objectReference)}");
+            // LoggingHelper2.Debug(this.guid, $"objectReference: {JsonConvert.SerializeObject(objectReference)}");
             return this.GetAttributeValueFromObjectReference(objectReference, AttributeName.Cardinality).Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
         }
 
         private string GetAttributeValueFromObjectReference(ObjectReference objectReference, string attributeName)
         {
             LoggingHelper2.Debug("Entering GetAttributeValueFromObjectReference(...)");
-            LoggingHelper2.Debug($"objectReference: {JsonConvert.SerializeObject(objectReference)}");
+            // LoggingHelper2.Debug(this.guid, $"objectReference: {JsonConvert.SerializeObject(objectReference)}");
             LoggingHelper2.Debug($"attributeName: {attributeName}");
 
             return objectReference.AttributeValues.Where(x => x.AttributeName == attributeName)
@@ -382,7 +382,7 @@ namespace DataConverter
                           == 1)
                 .ToList();
 
-            LoggingHelper2.Debug($"Found the following childRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(childRelationships)}");
+            // LoggingHelper2.Debug(this.guid, $"Found the following childRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(childRelationships)}");
             return childRelationships;
         }
 
@@ -404,7 +404,7 @@ namespace DataConverter
                         }));
             }
 
-            LoggingHelper2.Debug($"Found the following parentRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(parentRelationships)}");
+            // LoggingHelper2.Debug(this.guid, $"Found the following parentRelationships for binding with id = {binding.Id}: \n{JsonConvert.SerializeObject(parentRelationships)}");
 
             return parentRelationships;
         }
@@ -412,8 +412,8 @@ namespace DataConverter
         private async Task<Entity> GetEntityFromBinding(Binding binding)
         {
             LoggingHelper2.Debug("Entering GetEntityFromBinding(...)");
-            LoggingHelper2.Debug("binding: " + JsonConvert.SerializeObject(binding));
 
+            // LoggingHelper2.Debug(this.guid, "binding: " + JsonConvert.SerializeObject(binding));
             if (binding == null || !binding.SourcedByEntities.Any() || binding.SourcedByEntities.FirstOrDefault() == null)
             {
                 return null;

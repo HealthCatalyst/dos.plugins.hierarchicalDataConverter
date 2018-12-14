@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalyst.PluginTester", "Ca
 		{49554669-B70D-4181-84A5-FF74C4E4DC19} = {49554669-B70D-4181-84A5-FF74C4E4DC19}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalyst.HierarchicalDataConverter.AutomatedTests", "Catalyst.HierarchicalDataConverter.AutomatedTests\Catalyst.HierarchicalDataConverter.AutomatedTests.csproj", "{4A331F12-BA71-428D-A11A-6F564414F091}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +26,10 @@ Global
 		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E2360F7-E5A7-4E1C-9203-B4F5B8330CA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A331F12-BA71-428D-A11A-6F564414F091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A331F12-BA71-428D-A11A-6F564414F091}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A331F12-BA71-428D-A11A-6F564414F091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A331F12-BA71-428D-A11A-6F564414F091}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

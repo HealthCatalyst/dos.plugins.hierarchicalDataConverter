@@ -40,6 +40,9 @@
     <Reference Include="Catalyst.DataProcessing.Shared.Utilities, Version=4.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Catalyst.DataProcessing.Shared.Utilities.4.4.1812.1201\lib\net461\Catalyst.DataProcessing.Shared.Utilities.dll</HintPath>
     </Reference>
+    <Reference Include="Catalyst.Platform.CommonExtensions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=e99707dc63721e10, processorArchitecture=MSIL">
+      <HintPath>..\packages\Catalyst.Platform.CommonExtensions.1.0.11\lib\net461\Catalyst.Platform.CommonExtensions.dll</HintPath>
+    </Reference>
     <Reference Include="CommonServiceLocator, Version=2.0.4.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>..\packages\Unity.5.8.13\lib\net46\CommonServiceLocator.dll</HintPath>
     </Reference>
