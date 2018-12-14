@@ -57,9 +57,8 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             Assert.AreEqual(3, jobData.DataSources.Count());
             var firstSource = (TopLevelDataSource)jobData.TopLevelDataSource;
             Assert.AreEqual("[MyDatabaseName].[Level0TableName].[Level0Entity]", firstSource.TableOrView);
-            Assert.AreEqual(3, firstSource.SqlEntityColumnMappings.Count());
+            Assert.AreEqual(2, firstSource.SqlEntityColumnMappings.Count());
             Assert.AreEqual("id0", firstSource.SqlEntityColumnMappings.First().Name);
-            Assert.AreEqual("Level0EntityPrimaryKey", firstSource.SqlEntityColumnMappings.ElementAt(1).Name);
             Assert.AreEqual("Level0FieldToBeAdded", firstSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$", firstSource.Path);
 
@@ -67,32 +66,46 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", secondSource.TableOrView);
             Assert.AreEqual(3, secondSource.SqlEntityColumnMappings.Count());
             Assert.AreEqual("id1", secondSource.SqlEntityColumnMappings.First().Name);
-            Assert.AreEqual("Level1EntityPrimaryKey", secondSource.SqlEntityColumnMappings.ElementAt(1).Name);
+            Assert.AreEqual("id0", secondSource.SqlEntityColumnMappings.ElementAt(1).Name);
             Assert.AreEqual("Level1FieldToBeAdded", secondSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$.Level1Entity", secondSource.Path);
 
             var thirdSource = (DataSource)jobData.DataSources.ElementAt(2);
             Assert.AreEqual("[MyDatabaseName].[Level2TableName].[Level2Entity]", thirdSource.TableOrView);
-            Assert.AreEqual(3, thirdSource.SqlEntityColumnMappings.Count());
-            Assert.AreEqual("id1", thirdSource.SqlEntityColumnMappings.First().Name);
-            Assert.AreEqual("Level2EntityPrimaryKey", thirdSource.SqlEntityColumnMappings.ElementAt(1).Name);
+            Assert.AreEqual(4, thirdSource.SqlEntityColumnMappings.Count());
+            Assert.AreEqual("id2", thirdSource.SqlEntityColumnMappings.First().Name);
+            Assert.AreEqual("id0", thirdSource.SqlEntityColumnMappings.ElementAt(1).Name);
+            Assert.AreEqual("id1", thirdSource.SqlEntityColumnMappings.ElementAt(2).Name);
             Assert.AreEqual("Level2FieldToBeAdded", thirdSource.SqlEntityColumnMappings.Last().Name);
             Assert.AreEqual("$.Level1Entity.Level2Entity", thirdSource.Path);
 
+            Assert.AreEqual(2, thirdSource.Relationships.Count());
+            Assert.AreEqual("[MyDatabaseName].[Level2TableName].[Level2Entity]", thirdSource.Relationships.First().Destination.Entity);
+            Assert.AreEqual("'id0'", thirdSource.Relationships.First().Destination.Key);
+            Assert.AreEqual("[MyDatabaseName].[Level0TableName].[Level0Entity]", thirdSource.Relationships.First().Source.Entity);
+            Assert.AreEqual("'id0'", thirdSource.Relationships.First().Source.Key);
+            Assert.AreEqual("[MyDatabaseName].[Level2TableName].[Level2Entity]", thirdSource.Relationships.Last().Destination.Entity);
+            Assert.AreEqual("'id1'", thirdSource.Relationships.Last().Destination.Key);
+            Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", thirdSource.Relationships.Last().Source.Entity);
+            Assert.AreEqual("'id1'", thirdSource.Relationships.Last().Source.Key);
+
+
+            Assert.AreEqual(1, secondSource.Relationships.Count());
+            Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", secondSource.Relationships.First().Destination.Entity);
+            Assert.AreEqual("'id0'", secondSource.Relationships.First().Destination.Key);
+            Assert.AreEqual("[MyDatabaseName].[Level0TableName].[Level0Entity]", secondSource.Relationships.First().Source.Entity);
+            Assert.AreEqual("'id0'", secondSource.Relationships.First().Destination.Key);
+
+            Assert.AreEqual(0, firstSource.Relationships.Count());
         }
 
         private Field[] GetEntity0Fields()
         {
-            return new Field[4]
+            return new[]
                        {
                            new Field
                                {
                                    FieldName = "id0",
-                                   Status = FieldStatus.Active
-                               },
-                           new Field
-                               {
-                                   FieldName = "Level0EntityPrimaryKey",
                                    Status = FieldStatus.Active,
                                    IsPrimaryKey = true
                                },
@@ -111,18 +124,18 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Field[] GetEntity1Fields()
         {
-            return new Field[4]
+            return new[]
                        {
                            new Field
                                {
                                    FieldName = "id1",
-                                   Status = FieldStatus.Active
+                                   Status = FieldStatus.Active,
+                                   IsPrimaryKey = true
                                },
                            new Field
                                {
-                                   FieldName = "Level1EntityPrimaryKey",
-                                   Status = FieldStatus.Active,
-                                   IsPrimaryKey = true
+                                   FieldName = "id0",
+                                   Status = FieldStatus.Active
                                },
                            new Field
                                {
@@ -139,18 +152,23 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
         private Field[] GetEntity2Fields()
         {
-            return new Field[4]
+            return new[]
                        {
                            new Field
                                {
-                                   FieldName = "id1",
+                                   FieldName = "id2",
+                                   Status = FieldStatus.Active,
+                                   IsPrimaryKey = true
+                               },
+                           new Field
+                               {
+                                   FieldName = "id0",
                                    Status = FieldStatus.Active
                                },
                            new Field
                                {
-                                   FieldName = "Level2EntityPrimaryKey",
-                                   Status = FieldStatus.Active,
-                                   IsPrimaryKey = true
+                                   FieldName = "id1",
+                                   Status = FieldStatus.Active
                                },
                            new Field
                                {
@@ -411,6 +429,11 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                                    new Field
                                        {
                                            FieldName = "Level2Entity__id1",
+                                           Status = FieldStatus.Active
+                                       },
+                                   new Field
+                                       {
+                                           FieldName = "Level2Entity__id2",
                                            Status = FieldStatus.Active
                                        },
                                    new Field
