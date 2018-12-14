@@ -19,7 +19,7 @@
             {
                 lock (threadlock)
                 {
-                    LoggingHelper.Debug(message); // Log to Engine Log
+                    // LoggingHelper.Debug(message); // This is no longer working for some reason
                     // TODO - create plugin specific log
                     File.AppendAllText(
                         $@"C:\Program Files\Health Catalyst\Data-Processing Engine\logs\DataProcessingEngine_PluginOnly.log",
