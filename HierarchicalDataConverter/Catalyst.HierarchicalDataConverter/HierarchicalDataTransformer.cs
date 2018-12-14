@@ -48,6 +48,8 @@ namespace DataConverter
 
         private readonly DatabusRunner runner;
 
+        private UpmcSpecificConfig upmcSpecificConfig;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="HierarchicalDataTransformer"/> class.
         /// </summary>
@@ -147,29 +149,41 @@ namespace DataConverter
 
         private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
         {
-            var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             if (directoryName == null)
             {
                 throw new InvalidOperationException("Could not find plugin configuration file base path.");
             }
 
-            var fullPath = Path.Combine(directoryName, "Plugins", PluginFolderName, filePath);
-            var json = File.ReadAllText(fullPath);
-            var deserialized = (dynamic)JsonConvert.DeserializeObject(json);
-
+            string fullPath = Path.Combine(directoryName, "Plugins", PluginFolderName, filePath);
+            string json = File.ReadAllText(fullPath);
+            dynamic deserialized = JsonConvert.DeserializeObject(json);
+            dynamic databusConfiguration = deserialized.DatabusConfiguration;
+            
             var queryConfig = new QueryConfig
                                   {
-                                      ConnectionString = deserialized.ConnectionString,
-                                      Url = deserialized.Url,
-                                      MaximumEntitiesToLoad = deserialized.MaximumEntitiesToLoad,
-                                      EntitiesPerBatch = deserialized.EntitiesPerBatch,
-                                      EntitiesPerUploadFile = deserialized.EntitiesPerUploadFile,
-                                      LocalSaveFolder = deserialized.LocalSaveFolder,
-                                      WriteTemporaryFilesToDisk = deserialized.WriteTemporaryFilesToDisk,
-                                      WriteDetailedTemporaryFilesToDisk = deserialized.WriteDetailedTemporaryFilesToDisk,
-                                      UploadToUrl = deserialized.UploadToUrl
+                                      ConnectionString = databusConfiguration.ConnectionString,
+                                      Url = databusConfiguration.Url,
+                                      MaximumEntitiesToLoad = databusConfiguration.MaximumEntitiesToLoad,
+                                      EntitiesPerBatch = databusConfiguration.EntitiesPerBatch,
+                                      EntitiesPerUploadFile = databusConfiguration.EntitiesPerUploadFile,
+                                      LocalSaveFolder = databusConfiguration.LocalSaveFolder,
+                                      WriteTemporaryFilesToDisk = databusConfiguration.WriteTemporaryFilesToDisk,
+                                      WriteDetailedTemporaryFilesToDisk = databusConfiguration.WriteDetailedTemporaryFilesToDisk,
+                                      UploadToUrl = databusConfiguration.UploadToUrl
                                   };
+
+            dynamic upmcSpecificConfiguration = deserialized.ClientSpecificConfiguration;
+            this.upmcSpecificConfig = new UpmcSpecificConfig
+                                          {
+                                              Name = upmcSpecificConfiguration.name,
+                                              AppId = upmcSpecificConfiguration.appId,
+                                              AppSecret = upmcSpecificConfiguration.AppSecret,
+                                              BaseUrl = upmcSpecificConfiguration.BaseUrl,
+                                              TenantId = upmcSpecificConfiguration.TenantId,
+                                              TenantSecret = upmcSpecificConfiguration.TenantSecret
+                                          };
 
             return queryConfig;
         }
@@ -208,9 +222,12 @@ namespace DataConverter
                           };
             try
             {
-                // TODO: Get the authentication appId and secret from the database
                 var container = new UnityContainer();
-                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
+                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
+                    this.upmcSpecificConfig.AppId, 
+                    this.upmcSpecificConfig.AppSecret, 
+                    this.upmcSpecificConfig.TenantId, 
+                    this.upmcSpecificConfig.TenantSecret));
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
             }
