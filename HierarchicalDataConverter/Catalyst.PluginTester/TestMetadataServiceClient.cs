@@ -14,7 +14,7 @@
     {
         private DataMart dataMart;
 
-        public void Init([NotNull] DataMart dataMart1)
+        public void Init(DataMart dataMart1)
          {
              this.dataMart = dataMart1 ?? throw new ArgumentNullException(nameof(dataMart1));
          }
