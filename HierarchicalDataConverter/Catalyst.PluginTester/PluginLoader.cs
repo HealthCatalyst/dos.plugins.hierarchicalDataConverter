@@ -44,6 +44,7 @@
             DirectoryInfo pluginDirectory = new DirectoryInfo(pluginsFolder);
             foreach (FileInfo assemblyFile in pluginDirectory.GetFiles("*.dll"))
             {
+                Console.WriteLine($@"Found assembly: {assemblyFile.FullName}");
                 try
                 {
                     AssemblyName assemblyName = AssemblyName.GetAssemblyName(assemblyFile.FullName);

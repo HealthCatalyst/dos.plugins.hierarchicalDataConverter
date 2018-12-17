@@ -282,7 +282,7 @@ namespace DataConverter
                     new TopLevelDataSource
                         {
                             Path = path,
-                            Key = sourceEntity.Fields.First(field => field.IsPrimaryKey).FieldName,
+                            Key = await this.GetKeyColumnsAsCsv(sourceEntity),
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
                                 await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
@@ -326,6 +326,20 @@ namespace DataConverter
                         isFirst: false);
                 }
             }
+        }
+
+        private async Task<string> GetKeyColumnsAsCsv(Entity sourceEntity)
+        {
+            Field[] sourceEntityFields = await this.metadataServiceClient.GetEntityFieldsAsync(sourceEntity);
+
+            List<string> list = sourceEntityFields.Where(field => field.IsPrimaryKey).Select(field => field.FieldName).ToList();
+
+            if (!list.Any())
+            {
+                throw new Exception($"No primary keys found for entity {sourceEntity.EntityName}");
+            }
+
+            return string.Join(",", list);
         }
 
         private async Task<string> GetSourceAliasName(Binding binding)

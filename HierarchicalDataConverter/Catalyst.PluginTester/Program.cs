@@ -284,6 +284,29 @@
 
                 var hierarchicalDataTransformer = pluginLoader.GetPluginOfExactType<IDataTransformer>("HierarchicalDataTransformer");
 
+                if (hierarchicalDataTransformer == null)
+                {
+                    throw new Exception("Plugin was not found");
+                }
+                else
+                {
+                    Console.WriteLine(@"Successfully loaded plugin");
+                }
+
+                var canHandle = hierarchicalDataTransformer.CanHandle(
+                    bindingExecution,
+                    dataMart.Bindings.First(),
+                    dataMart.Entities.First());
+
+                if (!canHandle)
+                {
+                    throw new Exception("CanHandle return false");
+                }
+                else
+                {
+                    Console.WriteLine(@"CanHandle was successful");
+                }
+
                 var transformDataAsync = hierarchicalDataTransformer.TransformDataAsync(
                     bindingExecution,
                     dataMart.Bindings.First(),
