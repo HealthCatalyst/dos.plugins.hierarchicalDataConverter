@@ -60,7 +60,14 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             Assert.AreEqual(true, config.DatabusConfiguration.WriteDetailedTemporaryFilesToDisk);
             Assert.AreEqual(false, config.DatabusConfiguration.CompressFiles);
             Assert.AreEqual(false, config.DatabusConfiguration.UploadToUrl);
-            Assert.AreEqual("KeyLevel0", config.DatabusConfiguration.TopLevelKeyColumn);
+
+            var upmcConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
+            Assert.AreEqual("REDACTED_Name", upmcConfig.Name);
+            Assert.AreEqual("REDACTED_BaseUrl", upmcConfig.BaseUrl);
+            Assert.AreEqual("REDACTED_AppId", upmcConfig.AppId);
+            Assert.AreEqual("REDACTED_AppSecret", upmcConfig.AppSecret);
+            Assert.AreEqual("REDACTED_TenantId", upmcConfig.TenantId);
+            Assert.AreEqual("REDACTED_TenantSecret", upmcConfig.TenantSecret);
         }
     }
 }

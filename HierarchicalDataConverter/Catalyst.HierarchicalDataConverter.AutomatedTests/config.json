@@ -9,8 +9,7 @@
         "WriteTemporaryFilesToDisk": true,
         "WriteDetailedTemporaryFilesToDisk": true,
         "CompressFiles": false,
-        "UploadToUrl": false,
-        "TopLevelKeyColumn": "KeyLevel0"
+        "UploadToUrl": false
     },
     "ClientSpecificConfiguration": {
         "name": "REDACTED_Name",
