@@ -48,6 +48,7 @@ namespace DataConverter
 
         private readonly DatabusRunner runner;
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="HierarchicalDataTransformer"/> class.
         /// </summary>
@@ -90,7 +91,7 @@ namespace DataConverter
             try
             {
                 LoggingHelper2.Debug("In TransformDataAsync()");
-                var config = this.GetQueryConfigFromJsonFile();
+                var config = this.GetConfigurationFromJsonFile();
                 LoggingHelper2.Debug($"Configuration: {JsonConvert.SerializeObject(config)}");
 
                 var jobData = await this.GetJobData(binding, entity);
@@ -145,33 +146,50 @@ namespace DataConverter
             return bindings.First(binding => !this.GetAncestorObjectRelationships(binding, bindings).Any());
         }
 
-        private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
+        private HierarchicalConfiguration GetConfigurationFromJsonFile(string filePath = "config.json")
         {
-            var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             if (directoryName == null)
             {
                 throw new InvalidOperationException("Could not find plugin configuration file base path.");
             }
 
-            var fullPath = Path.Combine(directoryName, "Plugins", PluginFolderName, filePath);
-            var json = File.ReadAllText(fullPath);
-            var deserialized = (dynamic)JsonConvert.DeserializeObject(json);
-
+            string fullPath = Path.Combine(directoryName, "Plugins", PluginFolderName, filePath);
+            string json = File.ReadAllText(fullPath);
+            dynamic deserialized = JsonConvert.DeserializeObject(json);
+            dynamic databusConfiguration = deserialized.DatabusConfiguration;
+            
             var queryConfig = new QueryConfig
                                   {
-                                      ConnectionString = deserialized.ConnectionString,
-                                      Url = deserialized.Url,
-                                      MaximumEntitiesToLoad = deserialized.MaximumEntitiesToLoad,
-                                      EntitiesPerBatch = deserialized.EntitiesPerBatch,
-                                      EntitiesPerUploadFile = deserialized.EntitiesPerUploadFile,
-                                      LocalSaveFolder = deserialized.LocalSaveFolder,
-                                      WriteTemporaryFilesToDisk = deserialized.WriteTemporaryFilesToDisk,
-                                      WriteDetailedTemporaryFilesToDisk = deserialized.WriteDetailedTemporaryFilesToDisk,
-                                      UploadToUrl = deserialized.UploadToUrl
+                                      ConnectionString = databusConfiguration.ConnectionString,
+                                      Url = databusConfiguration.Url,
+                                      MaximumEntitiesToLoad = databusConfiguration.MaximumEntitiesToLoad,
+                                      EntitiesPerBatch = databusConfiguration.EntitiesPerBatch,
+                                      EntitiesPerUploadFile = databusConfiguration.EntitiesPerUploadFile,
+                                      LocalSaveFolder = databusConfiguration.LocalSaveFolder,
+                                      WriteTemporaryFilesToDisk = databusConfiguration.WriteTemporaryFilesToDisk,
+                                      WriteDetailedTemporaryFilesToDisk = databusConfiguration.WriteDetailedTemporaryFilesToDisk,
+                                      UploadToUrl = databusConfiguration.UploadToUrl
                                   };
 
-            return queryConfig;
+            dynamic upmcSpecificConfiguration = deserialized.ClientSpecificConfiguration;
+            var upmcSpecificConfig = new UpmcSpecificConfig
+                                          {
+                                              Name = upmcSpecificConfiguration.name,
+                                              AppId = upmcSpecificConfiguration.AppId,
+                                              AppSecret = upmcSpecificConfiguration.AppSecret,
+                                              BaseUrl = upmcSpecificConfiguration.BaseUrl,
+                                              TenantId = upmcSpecificConfiguration.TenantId,
+                                              TenantSecret = upmcSpecificConfiguration.TenantSecret
+                                          };
+            var hierarchicalConfig = new HierarchicalConfiguration
+                                         {
+                                             ClientSpecificConfiguration = upmcSpecificConfig,
+                                             DatabusConfiguration = queryConfig
+                                         };
+
+            return hierarchicalConfig;
         }
 
         private async Task<JobData> GetJobData(Binding binding, Entity destinationEntity)
@@ -198,19 +216,23 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
-        private void RunDatabus(QueryConfig config, JobData jobData)
+        private void RunDatabus(HierarchicalConfiguration config, JobData jobData)
         {
             LoggingHelper2.Debug("We are trying to run Databus");
             var job = new Job
                           {
-                              Config = config,
+                              Config = config.DatabusConfiguration,
                               Data = jobData,
                           };
             try
             {
-                // TODO: Get the authentication appId and secret from the database
+                var upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
                 var container = new UnityContainer();
-                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(string.Empty, string.Empty, string.Empty, string.Empty));
+                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
+                    upmcSpecificConfig.AppId, 
+                    upmcSpecificConfig.AppSecret, 
+                    upmcSpecificConfig.TenantId,
+                    upmcSpecificConfig.TenantSecret));
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
             }

@@ -9,15 +9,14 @@
         "WriteTemporaryFilesToDisk": true,
         "WriteDetailedTemporaryFilesToDisk": true,
         "CompressFiles": false,
-        "UploadToUrl": false,
-        "TopLevelKeyColumn": "KeyLevel0"
+        "UploadToUrl": false
     },
     "ClientSpecificConfiguration": {
-        "name": "REDACTED",
-        "BaseUrl": "REDACTED",
-        "AppId": "REDACTED",
-        "AppSecret": "REDACTED",
-        "TenantId": "REDACTED",
-        "TenantSecret": "REDACTED"
+        "name": "REDACTED_Name",
+        "BaseUrl": "REDACTED_BaseUrl",
+        "AppId": "REDACTED_AppId",
+        "AppSecret": "REDACTED_AppSecret",
+        "TenantId": "REDACTED_TenantId",
+        "TenantSecret": "REDACTED_TenantSecret"
     }
 }
