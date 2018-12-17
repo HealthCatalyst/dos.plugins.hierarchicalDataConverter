@@ -2,7 +2,7 @@
 {
     using System;
 
-    public class UpmcSpecificConfig
+    public class UpmcSpecificConfig : IClientSpecificConfiguration
     {
         public string Name { get; set; }
 

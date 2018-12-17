@@ -48,7 +48,6 @@ namespace DataConverter
 
         private readonly DatabusRunner runner;
 
-        private UpmcSpecificConfig upmcSpecificConfig;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HierarchicalDataTransformer"/> class.
@@ -92,7 +91,7 @@ namespace DataConverter
             try
             {
                 LoggingHelper2.Debug("In TransformDataAsync()");
-                var config = this.GetQueryConfigFromJsonFile();
+                var config = this.GetConfigurationFromJsonFile();
                 LoggingHelper2.Debug($"Configuration: {JsonConvert.SerializeObject(config)}");
 
                 var jobData = await this.GetJobData(binding, entity);
@@ -147,7 +146,7 @@ namespace DataConverter
             return bindings.First(binding => !this.GetAncestorObjectRelationships(binding, bindings).Any());
         }
 
-        private QueryConfig GetQueryConfigFromJsonFile(string filePath = "config.json")
+        private HierarchicalConfiguration GetConfigurationFromJsonFile(string filePath = "config.json")
         {
             string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
@@ -175,17 +174,22 @@ namespace DataConverter
                                   };
 
             dynamic upmcSpecificConfiguration = deserialized.ClientSpecificConfiguration;
-            this.upmcSpecificConfig = new UpmcSpecificConfig
+            var upmcSpecificConfig = new UpmcSpecificConfig
                                           {
                                               Name = upmcSpecificConfiguration.name,
-                                              AppId = upmcSpecificConfiguration.appId,
+                                              AppId = upmcSpecificConfiguration.AppId,
                                               AppSecret = upmcSpecificConfiguration.AppSecret,
                                               BaseUrl = upmcSpecificConfiguration.BaseUrl,
                                               TenantId = upmcSpecificConfiguration.TenantId,
                                               TenantSecret = upmcSpecificConfiguration.TenantSecret
                                           };
+            var hierarchicalConfig = new HierarchicalConfiguration
+                                         {
+                                             ClientSpecificConfiguration = upmcSpecificConfig,
+                                             DatabusConfiguration = queryConfig
+                                         };
 
-            return queryConfig;
+            return hierarchicalConfig;
         }
 
         private async Task<JobData> GetJobData(Binding binding, Entity destinationEntity)
@@ -212,22 +216,23 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
-        private void RunDatabus(QueryConfig config, JobData jobData)
+        private void RunDatabus(HierarchicalConfiguration config, JobData jobData)
         {
             LoggingHelper2.Debug("We are trying to run Databus");
             var job = new Job
                           {
-                              Config = config,
+                              Config = config.DatabusConfiguration,
                               Data = jobData,
                           };
             try
             {
+                var upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
                 var container = new UnityContainer();
                 container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
-                    this.upmcSpecificConfig.AppId, 
-                    this.upmcSpecificConfig.AppSecret, 
-                    this.upmcSpecificConfig.TenantId, 
-                    this.upmcSpecificConfig.TenantSecret));
+                    upmcSpecificConfig.AppId, 
+                    upmcSpecificConfig.AppSecret, 
+                    upmcSpecificConfig.TenantId,
+                    upmcSpecificConfig.TenantSecret));
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
             }
