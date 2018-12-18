@@ -37,6 +37,12 @@
             }
 
             Binding[] bindings = this.metadataServiceClient.GetBindingsForEntityAsync(entity.Id).Result;
+
+            if (bindings == null)
+            {
+                return false;
+            }
+
             return bindings.Any(b => b.BindingType == HierarchicalDataTransformer.NestedBindingTypeName);
         }
 
