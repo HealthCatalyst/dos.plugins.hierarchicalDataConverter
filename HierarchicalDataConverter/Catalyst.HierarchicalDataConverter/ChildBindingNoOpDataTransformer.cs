@@ -20,6 +20,11 @@
 
         public bool CanHandle(BindingExecution bindingExecution, Binding binding, Entity destinationEntity)
         {
+            if (binding == null)
+            {
+                throw new ArgumentException("Binding cannot be null.");
+            }
+
             return binding.BindingType == HierarchicalDataTransformer.NestedBindingTypeName;
         }
     }

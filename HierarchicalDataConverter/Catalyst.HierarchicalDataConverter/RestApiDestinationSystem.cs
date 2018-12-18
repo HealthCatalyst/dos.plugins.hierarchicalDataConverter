@@ -31,6 +31,11 @@
 
         public bool CanHandle(Entity entity)
         {
+            if (entity == null)
+            {
+                throw new ArgumentException("Entity cannot be null.");
+            }
+
             Binding[] bindings = this.metadataServiceClient.GetBindingsForEntityAsync(entity.Id).Result;
             return bindings.Any(b => b.BindingType == HierarchicalDataTransformer.NestedBindingTypeName);
         }
