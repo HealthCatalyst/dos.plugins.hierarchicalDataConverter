@@ -10,6 +10,7 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
     using System.Reflection;
 
     using Catalyst.DataProcessing.Shared.Utilities.Client;
+    using Catalyst.DataProcessing.Shared.Utilities.Context;
 
     using DataConverter;
 
@@ -45,7 +46,8 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
                 configName);
             File.Copy(configFileLocation, configFileNewLocation, true);
             var serviceClientMock = new Mock<IMetadataServiceClient>();
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object);
+            var processingContextWrapperFactoryMock = new Mock<IProcessingContextWrapperFactory>();
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
             var privateMethodRunner = new PrivateObject(converter);
             var args = new object[1] { configName };
             var config = (HierarchicalConfiguration)privateMethodRunner.Invoke("GetConfigurationFromJsonFile", args);
