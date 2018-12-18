@@ -8,6 +8,9 @@
     using Catalyst.DataProcessing.Shared.Models.DataProcessing;
     using Catalyst.DataProcessing.Shared.Models.Metadata;
 
+    /// <summary>
+    /// All Child (non-root) "Nested" type bindings are handled as part of the HierarchicalDataTransformer, even though that transformer only picks up the root.
+    /// </summary>
     public class ChildBindingNoOpDataTransformer : IDataTransformer
     {
         public async Task<long> TransformDataAsync(BindingExecution bindingExecution, Binding binding, Entity entity, CancellationToken cancellationToken)

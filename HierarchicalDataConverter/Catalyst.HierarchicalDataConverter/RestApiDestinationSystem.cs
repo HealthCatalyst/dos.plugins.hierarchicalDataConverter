@@ -11,6 +11,9 @@
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
 
+    /// <summary>
+    /// Databus currently handles the promotion of data to its final destination (Rest API), therefore this is a no op implementation
+    /// </summary>
     public class RestApiDestinationSystem : IDestinationSystem
     {
         private readonly IMetadataServiceClient metadataServiceClient;
