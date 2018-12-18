@@ -1,19 +1,20 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Catalyst.HierarchicalDataConverter.AutomatedTests
+﻿namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 {
-    using System.Collections.Generic;
+    using System;
     using System.Linq;
     using System.Threading.Tasks;
 
+    using Catalyst.DataProcessing.Shared.Models.DataProcessing;
     using Catalyst.DataProcessing.Shared.Models.Enums;
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
+    using Catalyst.DataProcessing.Shared.Utilities.Context;
 
     using DataConverter;
 
     using Fabric.Databus.Config;
+
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     using Moq;
 
@@ -27,7 +28,7 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
         [TestMethod]
         public void GrandparentParentChild()
         {
-            Binding[] bindings = new Binding[3]
+            Binding[] bindings = new Binding[]
                                      {
                                          this.GetNestedBindingLevel0Source(),
                                          this.GetNestedBindingLevel1Source(),
@@ -48,9 +49,14 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             serviceClientMock.Setup(mock => mock.GetEntityAsync(1)).Returns(Task.FromResult(this.GetLevel1SourceEntity()));
             serviceClientMock.Setup(mock => mock.GetEntityAsync(2)).Returns(Task.FromResult(this.GetLevel2SourceEntity()));
 
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object);
+            var processingContextWrapperFactoryMock = new Mock<IProcessingContextWrapperFactory>();
+            var processingContextWrapperMock = new Mock<IProcessingContextWrapper>();
+            processingContextWrapperFactoryMock.Setup(mock => mock.CreateProcessingContextWrapper()).Returns(processingContextWrapperMock.Object);
+            processingContextWrapperMock.Setup(mock => mock.GetIncrementalValue(It.IsAny<IncrementalConfiguration>())).Returns(new IncrementalValue { LastMaxIncrementalDate = DateTime.Now });
+
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
             var privateMethodRunner = new PrivateObject(converter);
-            object[] args = new object[2] { this.GetNestedBindingLevel0Source(), this.GetNestedDestinationEntity() };
+            object[] args = new object[] { this.GetNestedBindingLevel0Source(), new BindingExecution(), this.GetNestedDestinationEntity() };
 
             var jobData = ((Task<JobData>)privateMethodRunner.Invoke("GetJobData", args)).Result;
 
@@ -88,7 +94,6 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             Assert.AreEqual("'id1'", thirdSource.Relationships.Last().Destination.Key);
             Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", thirdSource.Relationships.Last().Source.Entity);
             Assert.AreEqual("'id1'", thirdSource.Relationships.Last().Source.Key);
-
 
             Assert.AreEqual(1, secondSource.Relationships.Count());
             Assert.AreEqual("[MyDatabaseName].[Level1TableName].[Level1Entity]", secondSource.Relationships.First().Destination.Entity);
@@ -511,6 +516,5 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 
             return entity;
         }
-
     }
 }
