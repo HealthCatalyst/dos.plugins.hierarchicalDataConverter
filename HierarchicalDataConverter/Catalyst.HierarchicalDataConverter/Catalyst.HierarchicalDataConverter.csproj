@@ -219,12 +219,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BindingReference.cs" />
+    <Compile Include="ChildBindingNoOpDataTransformer.cs" />
     <Compile Include="HierarchicalConfiguration.cs" />
     <Compile Include="HierarchicalDataTransformer.cs" />
     <Compile Include="HmacAuthorizationRequestInterceptor.cs" />
     <Compile Include="IClientSpecificConfiguration.cs" />
     <Compile Include="LoggingHelper2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestApiDestinationSystem.cs" />
     <Compile Include="UpmcSpecificConfig.cs" />
   </ItemGroup>
   <ItemGroup>

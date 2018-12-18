@@ -37,7 +37,7 @@ namespace DataConverter
     /// </summary>
     public class HierarchicalDataTransformer : IDataTransformer
     {
-        private const string NestedBindingTypeName = "Nested";
+        public const string NestedBindingTypeName = "Nested";
         private const string SourceEntitySourceColumnSeparator = "__";
 
         private readonly IMetadataServiceClient metadataServiceClient;
@@ -98,6 +98,7 @@ namespace DataConverter
             catch (Exception e)
             {
                 LoggingHelper2.Debug($"TransformDataAsync Threw exception: {e}");
+                throw;
             }
 
             return Convert.ToInt64(1);
