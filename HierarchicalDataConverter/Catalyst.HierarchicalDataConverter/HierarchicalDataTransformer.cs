@@ -264,12 +264,24 @@ namespace DataConverter
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
+            var jobEventsLogger = new JobEventsLogger();
+            container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
+            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
+
             this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
-            this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+
+            try
+            {
+                this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+            }
+            catch (AggregateException e)
+            {
+                throw e.Flatten();
+            }
 
             SetupSerilogLogger(); // re-setup logger as Databus is closing it
-            this.LogDebug($"Databus execution complete.  Processed { rowCounter.TotalCount } records.");
-            return rowCounter.TotalCount;
+            this.LogDebug($"Databus execution complete.  Processed { jobEventsLogger.NumberOfEntities } records.");
+            return jobEventsLogger.NumberOfEntities;
         }
 
         private void ValidateHierarchicalBinding(Binding binding, Binding[] allBindings)

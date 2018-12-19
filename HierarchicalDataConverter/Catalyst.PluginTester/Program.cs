@@ -10,6 +10,7 @@
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
+    using Catalyst.DataProcessing.Shared.Utilities.Logging;
     using Catalyst.PluginTester.DummyImplementations;
 
     using Unity;
@@ -282,6 +283,9 @@
 
                 var testProcessingContextWrapper = new TestProcessingContextWrapper();
                 unityContainer.RegisterInstance<IProcessingContextWrapperFactory>(new TestProcessingContextWrapperFactory(testProcessingContextWrapper));
+
+                var testLoggingRepository = new TestLoggingRepository();
+                unityContainer.RegisterInstance<ILoggingRepository>(testLoggingRepository);
 
                 var pluginLoader = new PluginLoader();
                 pluginLoader.LoadPlugins();

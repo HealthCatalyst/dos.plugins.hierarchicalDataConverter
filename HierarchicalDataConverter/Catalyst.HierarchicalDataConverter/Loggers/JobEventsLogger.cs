@@ -1,9 +1,9 @@
 ﻿namespace DataConverter.Loggers
 {
-    using System;
-
     using Fabric.Databus.Interfaces.Loggers;
     using Fabric.Databus.Interfaces.Queues;
+
+    using Serilog;
 
     public class JobEventsLogger : IJobEventsLogger
     {
@@ -11,7 +11,7 @@
 
         public void JobCompleted(IJobCompletedQueueItem jobCompletedQueueItem)
         {
-            Console.WriteLine($"JobCompleted: Entities: {jobCompletedQueueItem.NumberOfEntities}");
+            Log.Logger.Debug($"JobCompleted: Entities: {jobCompletedQueueItem.NumberOfEntities}");
             this.NumberOfEntities = jobCompletedQueueItem.NumberOfEntities;
         }
     }
