@@ -9,6 +9,7 @@
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
+    using Catalyst.DataProcessing.Shared.Utilities.Logging;
 
     using DataConverter;
 
@@ -54,7 +55,9 @@
             processingContextWrapperFactoryMock.Setup(mock => mock.CreateProcessingContextWrapper()).Returns(processingContextWrapperMock.Object);
             processingContextWrapperMock.Setup(mock => mock.GetIncrementalValue(It.IsAny<IncrementalConfiguration>())).Returns(new IncrementalValue { LastMaxIncrementalDate = DateTime.Now });
 
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
+            var loggingRepositoryMock = new Mock<ILoggingRepository>();
+
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object, loggingRepositoryMock.Object);
             var privateMethodRunner = new PrivateObject(converter);
             object[] args = new object[] { this.GetNestedBindingLevel0Source(), new BindingExecution(), this.GetNestedDestinationEntity() };
 

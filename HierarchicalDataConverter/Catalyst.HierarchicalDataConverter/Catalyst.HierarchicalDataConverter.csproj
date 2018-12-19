@@ -230,6 +230,7 @@
     <Compile Include="LoggingHelper2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestApiDestinationSystem.cs" />
+    <Compile Include="RowCounterBatchEventsLogger.cs" />
     <Compile Include="UpmcSpecificConfig.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -238,6 +239,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

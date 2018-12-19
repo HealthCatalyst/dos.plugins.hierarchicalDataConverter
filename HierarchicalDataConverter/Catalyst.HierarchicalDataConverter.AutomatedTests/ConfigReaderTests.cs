@@ -1,20 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Catalyst.HierarchicalDataConverter.AutomatedTests
+﻿namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 {
     using System.IO;
     using System.Reflection;
 
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
+    using Catalyst.DataProcessing.Shared.Utilities.Logging;
 
     using DataConverter;
-
-    using Fabric.Databus.Config;
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -47,7 +40,8 @@ namespace Catalyst.HierarchicalDataConverter.AutomatedTests
             File.Copy(configFileLocation, configFileNewLocation, true);
             var serviceClientMock = new Mock<IMetadataServiceClient>();
             var processingContextWrapperFactoryMock = new Mock<IProcessingContextWrapperFactory>();
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
+            var loggingRepositoryMock = new Mock<ILoggingRepository>();
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object, loggingRepositoryMock.Object);
             var privateMethodRunner = new PrivateObject(converter);
             var args = new object[1] { configName };
             var config = (HierarchicalConfiguration)privateMethodRunner.Invoke("GetConfigurationFromJsonFile", args);
