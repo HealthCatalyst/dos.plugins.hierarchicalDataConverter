@@ -28,6 +28,7 @@ namespace DataConverter
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
     using Fabric.Databus.Interfaces.Loggers;
+    using Fabric.Shared.ReliableHttp.Interfaces;
 
     using Newtonsoft.Json;
 
@@ -253,11 +254,11 @@ namespace DataConverter
 
             var container = new UnityContainer();
 
-            // container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
-            //    upmcSpecificConfig.AppId,
-            //    upmcSpecificConfig.AppSecret,
-            //    upmcSpecificConfig.TenantId,
-            //    upmcSpecificConfig.TenantSecret));
+            container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
+               upmcSpecificConfig.AppId,
+               upmcSpecificConfig.AppSecret,
+               upmcSpecificConfig.TenantId,
+               upmcSpecificConfig.TenantSecret));
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
