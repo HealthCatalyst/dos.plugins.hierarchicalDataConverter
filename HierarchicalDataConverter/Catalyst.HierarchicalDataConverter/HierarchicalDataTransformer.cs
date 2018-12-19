@@ -24,8 +24,11 @@ namespace DataConverter
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
 
+    using DataConverter.Loggers;
+
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
+    using Fabric.Databus.Interfaces.Loggers;
     using Fabric.Shared.ReliableHttp.Interfaces;
 
     using Newtonsoft.Json;
@@ -223,13 +226,40 @@ namespace DataConverter
             {
                 UpmcSpecificConfig upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
                 var container = new UnityContainer();
-                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
-                    upmcSpecificConfig.AppId,
-                    upmcSpecificConfig.AppSecret,
-                    upmcSpecificConfig.TenantId,
-                    upmcSpecificConfig.TenantSecret));
+                container.RegisterInstance<IHttpRequestInterceptor>(
+                    new HmacAuthorizationRequestInterceptor(
+                        upmcSpecificConfig.AppId,
+                        upmcSpecificConfig.AppSecret,
+                        upmcSpecificConfig.TenantId,
+                        upmcSpecificConfig.TenantSecret));
+
+                container.RegisterInstance<IBatchEventsLogger>(new BatchEventsLogger());
+                var jobEventsLogger = new JobEventsLogger();
+                container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
+                container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
 
                 this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+
+                int numberOfEntitiesProcessed = jobEventsLogger.NumberOfEntities;
+            }
+            catch (AggregateException e)
+            {
+                foreach (var innerException in e.Flatten().InnerExceptions)
+                {
+                    var nestedInnerException = innerException;
+                    do
+                    {
+                        if (!string.IsNullOrEmpty(nestedInnerException.Message))
+                        {
+                            Console.WriteLine(nestedInnerException.Message);
+                        }
+
+                        nestedInnerException = nestedInnerException.InnerException;
+                    }
+                    while (nestedInnerException != null);
+                }
+
+                throw e.Flatten();
             }
             catch (Exception e)
             {
