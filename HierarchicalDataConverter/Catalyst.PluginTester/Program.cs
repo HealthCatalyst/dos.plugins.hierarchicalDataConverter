@@ -9,6 +9,8 @@
     using Catalyst.DataProcessing.Shared.Models.DataProcessing;
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
+    using Catalyst.DataProcessing.Shared.Utilities.Context;
+    using Catalyst.PluginTester.DummyImplementations;
 
     using Unity;
     using Unity.Interception.Utilities;
@@ -277,6 +279,9 @@
                 var testMetadataServiceClient = new TestMetadataServiceClient();
                 testMetadataServiceClient.Init(dataMart);
                 unityContainer.RegisterInstance<IMetadataServiceClient>(testMetadataServiceClient);
+
+                var testProcessingContextWrapper = new TestProcessingContextWrapper();
+                unityContainer.RegisterInstance<IProcessingContextWrapperFactory>(new TestProcessingContextWrapperFactory(testProcessingContextWrapper));
 
                 var pluginLoader = new PluginLoader();
                 pluginLoader.LoadPlugins();

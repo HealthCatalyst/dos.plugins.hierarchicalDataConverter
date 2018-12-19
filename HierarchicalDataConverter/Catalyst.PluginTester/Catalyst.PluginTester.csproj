@@ -95,6 +95,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="TestMetadataServiceClient.cs" />
+    <Compile Include="DummyImplementations\TestProcessingContextWrapper.cs" />
+    <Compile Include="DummyImplementations\TestProcessingContextWrapperFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
