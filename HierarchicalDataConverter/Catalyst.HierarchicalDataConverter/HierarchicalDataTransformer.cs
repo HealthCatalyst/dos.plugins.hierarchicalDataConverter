@@ -23,12 +23,15 @@ namespace DataConverter
     using Catalyst.DataProcessing.Shared.Models.Metadata;
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
+    using Catalyst.DataProcessing.Shared.Utilities.Logging;
 
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
-    using Fabric.Shared.ReliableHttp.Interfaces;
+    using Fabric.Databus.Interfaces.Loggers;
 
     using Newtonsoft.Json;
+
+    using Serilog;
 
     using Unity;
 
@@ -42,42 +45,43 @@ namespace DataConverter
 
         private readonly IMetadataServiceClient metadataServiceClient;
         private readonly IProcessingContextWrapperFactory processingContextWrapperFactory;
+        private readonly ILoggingRepository loggingRepository;
 
         private readonly DatabusRunner runner;
+
+        /// <summary>
+        /// Setup Logger
+        /// </summary>
+        static HierarchicalDataTransformer()
+        {
+            SetupSerilogLogger();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HierarchicalDataTransformer"/> class.
         /// </summary>
         /// <param name="metadataServiceClient"></param>
         /// <param name="processingContextWrapperFactory"></param>
-        public HierarchicalDataTransformer(IMetadataServiceClient metadataServiceClient, IProcessingContextWrapperFactory processingContextWrapperFactory)
+        /// <param name="loggingRepository"></param>
+        public HierarchicalDataTransformer(IMetadataServiceClient metadataServiceClient, IProcessingContextWrapperFactory processingContextWrapperFactory, ILoggingRepository loggingRepository)
         {
             this.metadataServiceClient = metadataServiceClient ?? throw new ArgumentException("metadataServiceClient cannot be null.");
             this.processingContextWrapperFactory = processingContextWrapperFactory ?? throw new ArgumentException("ProcessingContextWrapperFactory cannot be null.");
+            this.loggingRepository = loggingRepository ?? throw new ArgumentException("log4NetLogger cannot be null.");
 
             this.runner = new DatabusRunner();
 
-            LoggingHelper2.Debug("Created instance of HierarchicalDataTransformer");
+            this.LogDebug("Successfully created HierarchicalDataTransformer instance.");
         }
 
         /// <summary>
-        /// The transform data async.
+        /// Transform the data from SQL to a restful API via Data Bus
         /// </summary>
-        /// <param name="bindingExecution">
-        /// The binding execution.
-        /// </param>
-        /// <param name="binding">
-        /// The binding.
-        /// </param>
-        /// <param name="entity">
-        /// The entity.
-        /// </param>
-        /// <param name="cancellationToken">
-        /// The cancellation token.
-        /// </param>
-        /// <returns>
-        /// The <see cref="Task"/>.
-        /// </returns>
+        /// <param name="bindingExecution"></param>
+        /// <param name="binding"></param>
+        /// <param name="entity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<long> TransformDataAsync(
             BindingExecution bindingExecution,
             Binding binding,
@@ -86,22 +90,28 @@ namespace DataConverter
         {
             try
             {
-                LoggingHelper2.Debug("In TransformDataAsync()");
+                this.LogDebug(
+                    string.Join(
+                        "\n\t",
+                        "Entering HierarchicalDataTransformer.TransformDataAsync with:",
+                        $"bindingExecution: {Serialize(bindingExecution)}",
+                        $"binding: {Serialize(binding)}",
+                        $"entity: {Serialize(entity)}"),
+                    bindingExecution);
+
                 HierarchicalConfiguration config = this.GetConfigurationFromJsonFile();
-                LoggingHelper2.Debug($"Configuration: {JsonConvert.SerializeObject(config)}");
+                this.LogDebug($"HierarchicalConfiguration: {Serialize(config)}", bindingExecution);
 
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
-                LoggingHelper2.Debug($"JobData: {JsonConvert.SerializeObject(jobData)}");
+                this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
 
-                this.RunDatabus(config, jobData);
+                return this.RunDatabus(config, jobData);
             }
             catch (Exception e)
             {
-                LoggingHelper2.Debug($"TransformDataAsync Threw exception: {e}");
+                this.LogError("HierarchicalDataTransformer.TransformDataAsync threw an exception.", e);
                 throw;
             }
-
-            return Convert.ToInt64(1);
         }
 
         /// <summary>
@@ -121,20 +131,42 @@ namespace DataConverter
             }
             catch (Exception e)
             {
-                LoggingHelper2.Debug($"Threw exception: {e}");
+                this.LogError(
+                    $"HierarchicalDataTransformer.CanHandle threw exception for binding [{Serialize(binding)}], bindingExecution [{Serialize(bindingExecution)}",
+                    e,
+                    bindingExecution);
                 throw;
             }
 
             // check the binding to see whether it has a destination entity
             // where it has an endpoint attribute, httpverb
-            return binding.BindingType == NestedBindingTypeName && binding.Id == topMost.Id; // BindingType.
+            return binding.BindingType == NestedBindingTypeName && binding.Id == topMost.Id;
+        }
+
+        private static void SetupSerilogLogger()
+        {
+            Log.Logger = CreateLogger<HierarchicalDataTransformer>();
+        }
+
+        private static ILogger CreateLogger<T>()
+        {
+            return new LoggerConfiguration().WriteTo.File(
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs\\Plugins\\HierarchicalDataTransformer\\HierarchicalDataTransformer.log"),
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] - [{SourceContext}] - {Message}{NewLine}{Exception}", 
+                    shared: true)
+                .MinimumLevel.Verbose()
+                .CreateLogger().ForContext<T>();
+        }
+
+        private static string Serialize(object obj)
+        {
+            return JsonConvert.SerializeObject(obj, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
         private Binding GetTopMostBinding(Binding[] bindings)
         {
             if (bindings == null || bindings.Length == 0)
             {
-                LoggingHelper2.Debug("ERROR - Throwing exception: Could not get top most binding from a list with no bindings");
                 throw new InvalidOperationException("Could not get top most binding from a list with no bindings");
             }
 
@@ -211,33 +243,30 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
-        private void RunDatabus(HierarchicalConfiguration config, JobData jobData)
+        private long RunDatabus(HierarchicalConfiguration config, JobData jobData)
         {
-            LoggingHelper2.Debug("We are trying to run Databus");
-            var job = new Job
-                          {
-                              Config = config.DatabusConfiguration,
-                              Data = jobData,
-                          };
-            try
-            {
-                UpmcSpecificConfig upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
-                var container = new UnityContainer();
-                container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
-                    upmcSpecificConfig.AppId,
-                    upmcSpecificConfig.AppSecret,
-                    upmcSpecificConfig.TenantId,
-                    upmcSpecificConfig.TenantSecret));
+            var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
-                this.runner.RunRestApiPipeline(container, job, new CancellationToken());
-            }
-            catch (Exception e)
-            {
-                LoggingHelper2.Debug($"Exception thrown by Databus: {e}");
-                throw;
-            }
+            UpmcSpecificConfig upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
+            var rowCounter = new RowCounterBatchEventsLogger();
+            ILogger databusLogger = CreateLogger<DatabusRunner>();
 
-            LoggingHelper2.Debug("Finished executing Databus");
+            var container = new UnityContainer();
+
+            // container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
+            //    upmcSpecificConfig.AppId,
+            //    upmcSpecificConfig.AppSecret,
+            //    upmcSpecificConfig.TenantId,
+            //    upmcSpecificConfig.TenantSecret));
+            container.RegisterInstance(databusLogger);
+            container.RegisterInstance<IBatchEventsLogger>(rowCounter);
+
+            this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
+            this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+
+            SetupSerilogLogger(); // re-setup logger as Databus is closing it
+            this.LogDebug($"Databus execution complete.  Processed { rowCounter.TotalCount } records.");
+            return rowCounter.TotalCount;
         }
 
         private void ValidateHierarchicalBinding(Binding binding, Binding[] allBindings)
@@ -329,8 +358,15 @@ namespace DataConverter
 
         private List<IncrementalColumn> GetIncrementalConfigurations(Binding binding, BindingExecution bindingExecution, Field[] sourceEntityFields)
         {
-            LoggingHelper2.Debug($"IncrementalConfigurations: {JsonConvert.SerializeObject(binding.IncrementalConfigurations)}");
-            LoggingHelper2.Debug($"MaxObservedIncrementalDate: {JsonConvert.SerializeObject(bindingExecution.MaxObservedIncrementalDate)}");
+            this.LogDebug(
+                string.Join(
+                    "\n\t",
+                    "Entering GetIncrementalConfigurations with: ",
+                    $"binding: {Serialize(binding)}",
+                    $"bindingExecution: {Serialize(bindingExecution)}",
+                    $"sourceEntityFields: {Serialize(sourceEntityFields)}"),
+                bindingExecution);
+
             var incrementalColumns = new List<IncrementalColumn>();
 
             if (binding.IncrementalConfigurations.Count == 0)
@@ -340,7 +376,7 @@ namespace DataConverter
 
             foreach (IncrementalConfiguration incrementalConfiguration in binding.IncrementalConfigurations)
             {
-                LoggingHelper2.Debug($"IncrementalStartDateTime: {JsonConvert.SerializeObject(bindingExecution.BatchExecution.IncrementalStartDateTime)}");
+                this.LogDebug($"Processing incremental configuration: {Serialize(incrementalConfiguration)} \n\tfor binding: {Serialize(bindingExecution)}");
 
                 IncrementalValue incrementalValue;
                 if (bindingExecution.BatchExecution.IncrementalStartDateTime.HasValue)
@@ -359,7 +395,7 @@ namespace DataConverter
                     }
                 }
 
-                LoggingHelper2.Debug($"incrementalValue: {JsonConvert.SerializeObject(incrementalValue)}");
+                this.LogDebug($"Found incrementalValue: {Serialize(incrementalValue)}");
 
                 if (incrementalValue?.LastMaxIncrementalDate == null)
                 {
@@ -371,11 +407,11 @@ namespace DataConverter
                                                Name = incrementalConfiguration.IncrementalColumnName,
                                                Operator = IncrementalOperator.GreaterThanOrEqualTo,
                                                Type = sourceEntityFields.First(f => f.FieldName == incrementalConfiguration.IncrementalColumnName).DataType,
-                                               Value = JsonConvert.SerializeObject(incrementalValue.LastMaxIncrementalDate.Value).Replace("\"", string.Empty)
+                                               Value = Serialize(incrementalValue.LastMaxIncrementalDate.Value).Replace("\"", string.Empty)
                                            });
             }
 
-            LoggingHelper2.Debug($"incrementalColumns: {JsonConvert.SerializeObject(incrementalColumns)}");
+            this.LogDebug($"processed the following incrementalColumns: {Serialize(incrementalColumns)}");
 
             return incrementalColumns;
         }
@@ -436,40 +472,33 @@ namespace DataConverter
 
         private string GetCardinalityFromObjectReference(ObjectReference objectReference)
         {
-            LoggingHelper2.Debug("Entering GetCardinalityFromObjectReference(...)");
             return this.GetAttributeValueFromObjectReference(objectReference, AttributeName.Cardinality).Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
         }
 
         private string GetAttributeValueFromObjectReference(ObjectReference objectReference, string attributeName)
         {
-            LoggingHelper2.Debug("Entering GetAttributeValueFromObjectReference(...)");
-            LoggingHelper2.Debug($"attributeName: {attributeName}");
-
             return objectReference.AttributeValues.Where(x => x.AttributeName == attributeName)
                 .Select(x => x.AttributeValue).FirstOrDefault();
         }
 
         private Binding GetMatchingChild(Binding[] bindings, int childBindingId)
         {
-            LoggingHelper2.Debug("Entering GetMatchingChild(...)");
             return bindings.FirstOrDefault(x => x.Id == childBindingId);
         }
 
         private List<ObjectReference> GetChildObjectRelationships(Binding binding)
         {
-            LoggingHelper2.Debug("Entering GetChildObjectRelationships(...)");
             List<ObjectReference> childRelationships = binding.ObjectRelationships.Where(
                     or => or.ChildObjectType == MetadataObjectType.Binding
                           && or.AttributeValues.First(attr => attr.AttributeName == AttributeName.GenerationGap).ValueToInt()
                           == 1)
                 .ToList();
-
+            this.LogDebug($"Found child object relationships for binding with id = {binding.Id}: {Serialize(childRelationships)}");
             return childRelationships;
         }
 
         private List<BindingReference> GetAncestorObjectRelationships(Binding binding, Binding[] allBindings)
         {
-            LoggingHelper2.Debug("Entering GetAncestorObjectRelationships(...)");
             var parentRelationships = new List<BindingReference>();
             foreach (Binding otherBinding in allBindings.Where(b => b.Id != binding.Id))
             {
@@ -485,13 +514,12 @@ namespace DataConverter
                         }));
             }
 
+            this.LogDebug($"Found ancestor object relationships for binding with id = {binding.Id}: {Serialize(parentRelationships)}");
             return parentRelationships;
         }
 
         private async Task<Entity> GetEntityFromBinding(Binding binding)
         {
-            LoggingHelper2.Debug("Entering GetEntityFromBinding(...)");
-
             if (binding == null || !binding.SourcedByEntities.Any() || binding.SourcedByEntities.FirstOrDefault() == null)
             {
                 return null;
@@ -499,7 +527,7 @@ namespace DataConverter
 
             SourceEntityReference entityReference = binding.SourcedByEntities.First();
             Entity entity = await this.metadataServiceClient.GetEntityAsync(entityReference.SourceEntityId);
-            LoggingHelper2.Debug($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
+            this.LogDebug($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
             return entity;
         }
 
@@ -533,6 +561,26 @@ namespace DataConverter
         private string CleanJson(string dirty)
         {
             return dirty.Replace("[", string.Empty).Replace("]", string.Empty).Replace('"', ' ').Trim();
+        }
+
+        private void LogDebug(string message, BindingExecution bindingExecution = null)
+        {
+            Log.Logger.Debug(message);
+
+            if (bindingExecution != null)
+            {
+                this.loggingRepository.LogInformation(bindingExecution, message);
+            }
+        }
+
+        private void LogError(string message, Exception e, BindingExecution bindingExecution = null)
+        {
+            Log.Logger.Error(message, e);
+
+            if (bindingExecution != null)
+            {
+                this.loggingRepository.LogError(bindingExecution, e);
+            }
         }
 
         private static class MetadataObjectType
