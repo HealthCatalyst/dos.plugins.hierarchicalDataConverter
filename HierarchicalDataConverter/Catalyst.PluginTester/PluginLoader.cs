@@ -13,7 +13,6 @@
     using Catalyst.Platform.CommonExtensions.ExceptionExtensions;
 
     using Unity;
-    using Unity.Injection;
     using Unity.Interception.Utilities;
     using Unity.RegistrationByConvention;
 
@@ -29,7 +28,7 @@
         private const string QueryRewritersSectionName = "queryRewriters";
         private const string FileSystemsSectionName = "fileSystems";
 
-        private readonly Dictionary<Type, object> plugins = new Dictionary<Type, object>();
+        private readonly List<KeyValuePair<Type, object>> plugins = new List<KeyValuePair<Type, object>>();
 
         public void LoadPlugins()
         {
@@ -89,9 +88,11 @@
             where T : class
         {
             var implementations = this.RegisterImplementations<T>(PluginsSectionGroupName, sectionName, container);
-            implementations.ForEach(implementation => this.plugins.Add(typeof(T), implementation));
+            implementations.ForEach(
+                implementation => this.plugins.Add(new KeyValuePair<Type, object>(typeof(T), implementation)));
         }
 
+        // ReSharper disable once MemberCanBeMadeStatic.Local
         private IEnumerable<T> RegisterImplementations<T>(string sectionGroupName, string sectionName, IUnityContainer container) where T : class
         {
             container.RegisterTypes(
