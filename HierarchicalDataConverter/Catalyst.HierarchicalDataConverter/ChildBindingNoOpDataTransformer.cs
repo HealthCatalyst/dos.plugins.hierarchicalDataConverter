@@ -15,7 +15,7 @@
     {
         public async Task<long> TransformDataAsync(BindingExecution bindingExecution, Binding binding, Entity entity, CancellationToken cancellationToken)
         {
-            return Convert.ToInt64(0);
+            return await Task.FromResult(Convert.ToInt64(0));
         }
 
         public bool CanHandle(BindingExecution bindingExecution, Binding binding, Entity destinationEntity)

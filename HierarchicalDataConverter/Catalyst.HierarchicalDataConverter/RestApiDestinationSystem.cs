@@ -12,7 +12,7 @@
     using Catalyst.DataProcessing.Shared.Utilities.Client;
 
     /// <summary>
-    /// Databus currently handles the promotion of data to its final destination (Rest API), therefore this is a no op implementation
+    /// Data Bus currently handles the promotion of data to its final destination (Rest API), therefore this is a no op implementation
     /// </summary>
     public class RestApiDestinationSystem : IDestinationSystem
     {
@@ -26,7 +26,7 @@
         public async Task AddEntityOptimizationsAsync(EntityExecution entityExecution, Entity entity, DataMart dataMart, CancellationToken cancellationToken)
         {
             // no op
-            return;
+            await Task.CompletedTask;
         }
 
         public bool CanHandle(Entity entity)
@@ -49,13 +49,13 @@
         public async Task CreateDestinationEntityAsync(EntityExecution entityExecution, Entity entity, DataMart dataMart, CancellationToken cancellationToken)
         {
             // no op
-            return;
+            await Task.CompletedTask;
         }
 
         public async Task CreatePhysicalEntityAsync(EntityExecution entityExecution, Entity entity, DataMart dataMart, CancellationToken cancellationToken)
         {
             // no op
-            return;
+            await Task.CompletedTask;
         }
 
         public Task<IDictionary<string, object>> GetExampleDataAsync(EntityExecution entityExecution, Entity entity, ICollection<Field> fieldsToUpdate, CancellationToken cancellationToken)
@@ -67,6 +67,7 @@
         public async Task<long> PromoteStagedDataAsync(EntityExecution entityExecution, Entity entity, DataMart dataMart, CancellationToken cancellationToken)
         {
             // no op: Databus takes care of this
+            await Task.CompletedTask;
             return Convert.ToInt64(0);
         }
     }
