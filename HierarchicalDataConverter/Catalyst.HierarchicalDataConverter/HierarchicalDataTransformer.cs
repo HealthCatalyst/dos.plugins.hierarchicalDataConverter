@@ -112,7 +112,7 @@ namespace DataConverter
             }
             catch (Exception e)
             {
-                this.LogError("HierarchicalDataTransformer.TransformDataAsync threw an exception.", e);
+                this.LogError($"HierarchicalDataTransformer.TransformDataAsync threw an exception: {e}", e, bindingExecution);
                 throw;
             }
         }
@@ -278,8 +278,11 @@ namespace DataConverter
             {
                 throw e.Flatten();
             }
+            finally
+            {
+                SetupSerilogLogger(); // re-setup logger as Databus is closing it
+            }
 
-            SetupSerilogLogger(); // re-setup logger as Databus is closing it
             this.LogDebug($"Databus execution complete.  Processed { jobEventsLogger.NumberOfEntities } records.");
             return jobEventsLogger.NumberOfEntities;
         }
