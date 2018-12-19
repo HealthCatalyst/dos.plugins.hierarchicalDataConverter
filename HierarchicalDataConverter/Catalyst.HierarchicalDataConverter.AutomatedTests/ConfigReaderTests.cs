@@ -1,25 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Catalyst.HierarchicalDataConverter.AutomatedTests
+﻿namespace Catalyst.HierarchicalDataConverter.AutomatedTests
 {
     using System.IO;
     using System.Reflection;
-
-    using Castle.Core.Logging;
 
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
     using Catalyst.DataProcessing.Shared.Utilities.Logging;
 
     using DataConverter;
-
-    using Fabric.Databus.Config;
-
-    using log4net;
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 

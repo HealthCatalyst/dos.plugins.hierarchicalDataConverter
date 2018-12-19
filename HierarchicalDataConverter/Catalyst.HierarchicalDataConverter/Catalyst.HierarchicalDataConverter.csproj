@@ -222,7 +222,6 @@
     <Compile Include="ChildBindingNoOpDataTransformer.cs" />
     <Compile Include="HierarchicalConfiguration.cs" />
     <Compile Include="HierarchicalDataTransformer.cs" />
-    <Compile Include="HierarchicalPluginLogger.cs" />
     <Compile Include="HmacAuthorizationRequestInterceptor.cs" />
     <Compile Include="IClientSpecificConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

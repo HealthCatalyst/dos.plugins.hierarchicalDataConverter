@@ -15,8 +15,6 @@
 
     using Fabric.Databus.Config;
 
-    using log4net;
-
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     using Moq;
