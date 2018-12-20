@@ -276,13 +276,11 @@ namespace DataConverter
             }
             catch (AggregateException e)
             {
+                this.LogError($"Databus threw an error: {e}", e);
                 throw e.Flatten();
             }
-            finally
-            {
-                SetupSerilogLogger(); // re-setup logger as Databus is closing it
-            }
 
+            SetupSerilogLogger(); // re-setup logger as Databus is closing it
             this.LogDebug($"Databus execution complete.  Processed { jobEventsLogger.NumberOfEntities } records.");
             return jobEventsLogger.NumberOfEntities;
         }
@@ -329,7 +327,7 @@ namespace DataConverter
                             Key = this.GetKeyColumnsAsCsv(sourceEntity, sourceEntityFields),
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
-                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity),
                             PropertyType = null,
                             MyRelationships = new List<SqlRelationship>(),
                             MyIncrementalColumns = this.GetIncrementalConfigurations(rootBinding, bindingExecution, sourceEntityFields)
@@ -343,7 +341,7 @@ namespace DataConverter
                             Path = path,
                             TableOrView = this.GetFullyQualifiedTableName(sourceEntity),
                             MySqlEntityColumnMappings =
-                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity, rootBinding.SourcedByEntities.First().SourceAliasName),
+                                await this.GetColumnsFromEntity(sourceEntity, destinationEntity),
                             PropertyType = this.GetCardinalityFromObjectReference(relationshipToParent),
                             MyRelationships = await this.GetDatabusRelationships(rootBinding, allBindings, sourceEntity)
                         });
@@ -549,7 +547,7 @@ namespace DataConverter
             return entity;
         }
 
-        private async Task<List<SqlEntityColumnMapping>> GetColumnsFromEntity(Entity sourceEntity, Entity destinationEntity, string entityAlias)
+        private async Task<List<SqlEntityColumnMapping>> GetColumnsFromEntity(Entity sourceEntity, Entity destinationEntity)
         {
             if (sourceEntity == null || destinationEntity == null)
             {
@@ -566,7 +564,7 @@ namespace DataConverter
                     .Where(
                         field => destinationEntity.Fields.Any(
                             destinationField => destinationField.FieldName == $"{sourceEntity.EntityName}{SourceEntitySourceColumnSeparator}{field.FieldName}" && destinationField.Status != FieldStatus.Omitted))
-                    .Select(f => new SqlEntityColumnMapping { Name = f.FieldName, Alias = entityAlias ?? f.FieldName }));
+                    .Select(f => new SqlEntityColumnMapping { Name = f.FieldName }));
 
             return columns;
         }
