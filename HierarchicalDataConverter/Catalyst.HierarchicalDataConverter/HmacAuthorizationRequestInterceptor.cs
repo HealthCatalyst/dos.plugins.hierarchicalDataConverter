@@ -47,7 +47,13 @@
             if (method == HttpMethod.Post)
             {
                 MD5 md5 = MD5.Create();
-                string postData = this.GetRequestData(request); 
+                string postData = this.GetRequestData(request);
+                Log.Logger.Debug($"Request:{request.ToString()}");
+                if (request.Content != null)
+                {
+                    Log.Logger.Debug(postData);
+                }
+
                 var contentMd5 = this.GetMd5(md5, postData);
                 
                 if (contentMd5 != null && contentMd5.Length != 0)
