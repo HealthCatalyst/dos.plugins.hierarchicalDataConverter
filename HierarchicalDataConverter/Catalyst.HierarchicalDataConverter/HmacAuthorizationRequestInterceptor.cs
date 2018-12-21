@@ -5,6 +5,7 @@
     using System.Net.Http;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Web.UI;
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 
@@ -39,7 +40,7 @@
             if (method == HttpMethod.Post)
             {
                 MD5 md5 = MD5.Create();
-                string postData = request.Properties.Single(prop => prop.Key == "application/json").Value.ToString();
+                string postData = this.GetRequestData(request); // request.Properties.Single(prop => prop.Key == "application/json").Value.ToString();
                 var contentMd5 = this.GetMd5(md5, postData);
                 
                 if (!string.IsNullOrEmpty(contentMd5))
@@ -58,6 +59,11 @@
             }
 
             request.Headers.Add("Authorization", $"APIAuth {authHeader}");
+        }
+
+        private string GetRequestData(HttpRequestMessage request)
+        {
+            return request.Content.ReadAsStringAsync().Result;
         }
 
         private string GetMd5(MD5 md5Hash, string input)
