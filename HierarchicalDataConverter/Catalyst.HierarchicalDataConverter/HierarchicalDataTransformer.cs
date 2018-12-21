@@ -13,6 +13,7 @@ namespace DataConverter
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Net.Http;
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
@@ -200,8 +201,9 @@ namespace DataConverter
                                       LocalSaveFolder = databusConfiguration.LocalSaveFolder,
                                       WriteTemporaryFilesToDisk = databusConfiguration.WriteTemporaryFilesToDisk,
                                       WriteDetailedTemporaryFilesToDisk = databusConfiguration.WriteDetailedTemporaryFilesToDisk,
-                                      UploadToUrl = databusConfiguration.UploadToUrl
-                                  };
+                                      UploadToUrl = databusConfiguration.UploadToUrl,
+                                      UrlMethod = this.GetHtmlMethod(Convert.ToString(databusConfiguration.UrlMethod))
+            };
 
             dynamic upmcSpecificConfiguration = deserialized.ClientSpecificConfiguration;
             var upmcSpecificConfig = new UpmcSpecificConfig
@@ -599,6 +601,22 @@ namespace DataConverter
             }
         }
 
+        private HttpMethod GetHtmlMethod(string methodName)
+        {
+            HttpMethod urlMethod;
+            switch (methodName)
+            {
+                case nameof(HttpMethod.Put):
+                    urlMethod = HttpMethod.Put;
+                    break;
+                default:
+                    urlMethod = HttpMethod.Post;
+                    break;
+            }
+
+            return urlMethod;
+        }
+
         private static class MetadataObjectType
         {
             public const string Binding = "Binding";
@@ -616,5 +634,6 @@ namespace DataConverter
         {
             public const string GreaterThanOrEqualTo = "GreaterThanOrEqualTo";
         }
+
     }
 }

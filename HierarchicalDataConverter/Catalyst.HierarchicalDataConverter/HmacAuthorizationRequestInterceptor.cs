@@ -3,13 +3,18 @@
     using System;
     using System.Linq;
     using System.Net.Http;
+    using System.Net.Http.Headers;
     using System.Security.Cryptography;
     using System.Text;
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 
+    using Serilog;
+
     public class HmacAuthorizationRequestInterceptor : IHttpRequestInterceptor
     {
+        private const string RequestContentType = "application/json";
+
         private readonly string appId;
 
         private readonly string appSecretKey;
@@ -17,6 +22,7 @@
         private readonly string tenantId;
 
         private readonly string tenantSecretKey;
+
 
         public HmacAuthorizationRequestInterceptor(string appId, string appSecretKey, string tenantId, string tenantSecretKey)
         {
@@ -36,18 +42,20 @@
             string authHeader = null;
             DateTime requestDt = DateTime.Now.ToUniversalTime();
             request.Headers.Date = requestDt;
+            request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(RequestContentType);
+
             if (method == HttpMethod.Post)
             {
                 MD5 md5 = MD5.Create();
-                string postData = request.Properties.Single(prop => prop.Key == "application/json").Value.ToString();
+                string postData = this.GetRequestData(request); 
                 var contentMd5 = this.GetMd5(md5, postData);
                 
-                if (!string.IsNullOrEmpty(contentMd5))
+                if (contentMd5 != null && contentMd5.Length != 0)
                 {
-                    request.Headers.Add("Content-MD5", contentMd5);
+                    request.Content.Headers.ContentMD5 = contentMd5;
                     authHeader = this.GetAuthHeader(
-                        "application/json",
-                        contentMd5,
+                        RequestContentType,
+                        Convert.ToBase64String(contentMd5),
                         request.RequestUri.PathAndQuery,
                         requestDt);
                 }
@@ -60,12 +68,16 @@
             request.Headers.Add("Authorization", $"APIAuth {authHeader}");
         }
 
-        private string GetMd5(MD5 md5Hash, string input)
+        private string GetRequestData(HttpRequestMessage request)
+        {
+            return request.Content.ReadAsStringAsync().Result;
+        }
+
+        private byte[] GetMd5(MD5 md5Hash, string input)
         {
             // Convert the input string to a byte array and compute the hash. 
             byte[] hash = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
-
-            return Convert.ToBase64String(hash);
+            return hash;
         }
 
         private string GetAuthHeader(string requestContentType, string requestBodyMd5, string requestUrl, DateTime requestTs)
@@ -90,7 +102,7 @@
             byte[] appSecretBytes = Convert.FromBase64String(appSecret);
             byte[] tenantSecretBytes = Convert.FromBase64String(tenantSecret);
 
-            if ((tenantSecretBytes != null) && (tenantSecretBytes.Length != 0))
+            if (tenantSecretBytes.Length != 0)
             {
                 byte[] newSecretBytes = new byte[appSecretBytes.Length + tenantSecretBytes.Length];
                 Buffer.BlockCopy(appSecretBytes, 0, newSecretBytes, 0, appSecretBytes.Length);
@@ -98,6 +110,7 @@
                 byte[] newSecretSha = shah512.ComputeHash(newSecretBytes);
                 newSecret = Convert.ToBase64String(newSecretSha);
             }
+
             return newSecret;
         }
 
