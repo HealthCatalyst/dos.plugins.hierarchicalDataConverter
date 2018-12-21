@@ -9,6 +9,8 @@
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 
+    using Serilog;
+
     public class HmacAuthorizationRequestInterceptor : IHttpRequestInterceptor
     {
         private readonly string appId;
@@ -41,11 +43,18 @@
             {
                 MD5 md5 = MD5.Create();
                 string postData = this.GetRequestData(request); // request.Properties.Single(prop => prop.Key == "application/json").Value.ToString();
+                Log.Logger.Debug($"Request:{request.ToString()}");
+                if (request.Content != null)
+                {
+                    Log.Logger.Debug(postData);
+                }
+
                 var contentMd5 = this.GetMd5(md5, postData);
                 
                 if (!string.IsNullOrEmpty(contentMd5))
                 {
                     request.Headers.Add("Content-MD5", contentMd5);
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
                     authHeader = this.GetAuthHeader(
                         "application/json",
                         contentMd5,
