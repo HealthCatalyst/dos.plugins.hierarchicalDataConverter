@@ -6,7 +6,6 @@
     using System.Net.Http.Headers;
     using System.Security.Cryptography;
     using System.Text;
-    using System.Web.UI;
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 

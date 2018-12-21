@@ -17,7 +17,6 @@ namespace DataConverter
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Web;
 
     using Catalyst.DataProcessing.Engine.PluginInterfaces;
     using Catalyst.DataProcessing.Shared.Models.DataProcessing;
