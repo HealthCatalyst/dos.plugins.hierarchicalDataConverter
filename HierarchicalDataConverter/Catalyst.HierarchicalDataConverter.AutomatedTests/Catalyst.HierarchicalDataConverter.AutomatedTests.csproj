@@ -230,6 +230,7 @@
   <ItemGroup>
     <Compile Include="ConfigReaderTests.cs" />
     <Compile Include="GrandparentParentChildTest.cs" />
+    <Compile Include="HmacAuthorizationRequestInterceptorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
