@@ -6,6 +6,7 @@
     using System.Net.Http.Headers;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading.Tasks;
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 
@@ -32,12 +33,12 @@
             this.tenantSecretKey = tenantSecretKey;
         }
 
-        public void InterceptRequest(HttpMethod method, HttpRequestMessage request)
+        public async Task InterceptRequestAsync(string requestId, HttpMethod method, HttpRequestMessage request)
         {
-            this.AddHmacRequestHeaders(method, request);
+            await this.AddHmacRequestHeadersAsync(method, request);
         }
 
-        private void AddHmacRequestHeaders(HttpMethod method, HttpRequestMessage request)
+        private async Task AddHmacRequestHeadersAsync(HttpMethod method, HttpRequestMessage request)
         {
             string authHeader = null;
             DateTime requestDt = DateTime.Now.ToUniversalTime();
@@ -47,7 +48,7 @@
             if (method == HttpMethod.Post)
             {
                 MD5 md5 = MD5.Create();
-                string postData = this.GetRequestData(request); 
+                string postData = await this.GetRequestDataAsync(request); 
                 var contentMd5 = this.GetMd5(md5, postData);
                 
                 if (contentMd5 != null && contentMd5.Length != 0)
@@ -68,9 +69,9 @@
             request.Headers.Add("Authorization", $"APIAuth {authHeader}");
         }
 
-        private string GetRequestData(HttpRequestMessage request)
+        private async Task<string> GetRequestDataAsync(HttpRequestMessage request)
         {
-            return request.Content.ReadAsStringAsync().Result;
+            return await request.Content.ReadAsStringAsync();
         }
 
         private byte[] GetMd5(MD5 md5Hash, string input)
