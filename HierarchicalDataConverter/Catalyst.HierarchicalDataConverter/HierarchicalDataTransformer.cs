@@ -109,7 +109,7 @@ namespace DataConverter
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
 
-                return this.RunDatabus(config, jobData);
+                return await this.RunDatabusAsync(config, jobData, cancellationToken);
             }
             catch (Exception e)
             {
@@ -248,7 +248,11 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
-        private long RunDatabus(HierarchicalConfiguration config, JobData jobData)
+        /// <param name="cancellationToken"></param>
+        private async Task<long> RunDatabusAsync(
+            HierarchicalConfiguration config,
+            JobData jobData,
+            CancellationToken cancellationToken)
         {
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
@@ -274,7 +278,7 @@ namespace DataConverter
 
             try
             {
-                this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+                await this.runner.RunRestApiPipelineAsync(container, job, cancellationToken);
             }
             catch (AggregateException e)
             {
