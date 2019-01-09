@@ -226,6 +226,7 @@
     <Compile Include="HmacAuthorizationRequestInterceptor.cs" />
     <Compile Include="IClientSpecificConfiguration.cs" />
     <Compile Include="Loggers\JobEventsLogger.cs" />
+    <Compile Include="Loggers\MyHttpResponseLogger.cs" />
     <Compile Include="Loggers\QuerySqlLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestApiDestinationSystem.cs" />
