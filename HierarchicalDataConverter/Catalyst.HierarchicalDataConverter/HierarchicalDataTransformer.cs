@@ -158,7 +158,7 @@ namespace DataConverter
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs\\Plugins\\HierarchicalDataTransformer\\HierarchicalDataTransformer.log"),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] - [{SourceContext}] - {Message}{NewLine}{Exception}", 
                     shared: true)
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Information()
                 .CreateLogger().ForContext<T>();
         }
 
