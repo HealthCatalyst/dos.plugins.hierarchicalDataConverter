@@ -273,6 +273,7 @@ namespace DataConverter
             var jobEventsLogger = new JobEventsLogger();
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
             container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger());
 
             this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
 
