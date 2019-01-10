@@ -11,7 +11,7 @@
 
         public void JobCompleted(IJobCompletedQueueItem jobCompletedQueueItem)
         {
-            Log.Logger.Debug($"JobCompleted: Entities: {jobCompletedQueueItem.NumberOfEntities}");
+            Log.Logger.Information($"JobCompleted: Entities: {jobCompletedQueueItem.NumberOfEntities}");
             this.NumberOfEntities = jobCompletedQueueItem.NumberOfEntities;
         }
     }
