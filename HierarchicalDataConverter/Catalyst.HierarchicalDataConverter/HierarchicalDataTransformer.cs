@@ -392,7 +392,7 @@ namespace DataConverter
 
             var incrementalColumns = new List<IncrementalColumn>();
 
-            if (binding.LoadTypeCode != BindingLoadType.Incremental)
+            if (bindingExecution.LoadType != BindingLoadType.Incremental)
             {
                 return incrementalColumns;
             }
