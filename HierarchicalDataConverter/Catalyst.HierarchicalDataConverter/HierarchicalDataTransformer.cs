@@ -109,7 +109,7 @@ namespace DataConverter
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
 
-                return this.RunDatabus(config, jobData);
+                return await this.RunDatabusAsync(config, jobData, cancellationToken);
             }
             catch (Exception e)
             {
@@ -158,7 +158,7 @@ namespace DataConverter
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs\\Plugins\\HierarchicalDataTransformer\\HierarchicalDataTransformer.log"),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] - [{SourceContext}] - {Message}{NewLine}{Exception}", 
                     shared: true)
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Information()
                 .CreateLogger().ForContext<T>();
         }
 
@@ -248,7 +248,11 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
-        private long RunDatabus(HierarchicalConfiguration config, JobData jobData)
+        /// <param name="cancellationToken"></param>
+        private async Task<long> RunDatabusAsync(
+            HierarchicalConfiguration config,
+            JobData jobData,
+            CancellationToken cancellationToken)
         {
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
@@ -269,12 +273,13 @@ namespace DataConverter
             var jobEventsLogger = new JobEventsLogger();
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
             container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger());
 
             this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
 
             try
             {
-                this.runner.RunRestApiPipeline(container, job, new CancellationToken());
+                await this.runner.RunRestApiPipelineAsync(container, job, cancellationToken);
             }
             catch (AggregateException e)
             {

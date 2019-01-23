@@ -9,7 +9,7 @@
     {
         public void BatchCompleted(IBatchCompletedQueueItem batchCompletedQueueItem)
         {
-            Log.Logger.Debug($"BatchCompleted: {batchCompletedQueueItem.BatchNumber}  Uploaded Entities: {batchCompletedQueueItem.NumberOfEntitiesUploaded}. [start:{batchCompletedQueueItem.Start}, end:{batchCompletedQueueItem.End}]");
+            Log.Logger.Information($"BatchCompleted: {batchCompletedQueueItem.BatchNumber}  Uploaded Entities: {batchCompletedQueueItem.NumberOfEntitiesUploaded}. [start:{batchCompletedQueueItem.Start}, end:{batchCompletedQueueItem.End}]");
         }
 
         public void BatchStarted(IBatchCompletedQueueItem batchStartedQueueItem)
