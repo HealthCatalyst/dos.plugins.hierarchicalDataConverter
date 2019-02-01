@@ -396,6 +396,11 @@ namespace DataConverter
 
             var incrementalColumns = new List<IncrementalColumn>();
 
+            if (bindingExecution.LoadType != BindingLoadType.Incremental)
+            {
+                return incrementalColumns;
+            }
+
             if (binding.IncrementalConfigurations.Count == 0)
             {
                 return incrementalColumns;
