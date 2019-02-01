@@ -36,6 +36,8 @@ namespace DataConverter
     using Newtonsoft.Json;
 
     using Serilog;
+    using Serilog.Core;
+    using Serilog.Events;
 
     using Unity;
 
@@ -109,7 +111,7 @@ namespace DataConverter
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
 
-                return await this.RunDatabusAsync(config, jobData, cancellationToken);
+                return await this.RunDatabusAsync(config, jobData, bindingExecution, cancellationToken);
             }
             catch (Exception e)
             {
@@ -161,7 +163,7 @@ namespace DataConverter
                 .MinimumLevel.Information()
                 .CreateLogger().ForContext<T>();
         }
-
+        
         private static string Serialize(object obj)
         {
             return JsonConvert.SerializeObject(obj, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
@@ -248,16 +250,18 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
+        /// <param name="bindingExecution"></param>
         /// <param name="cancellationToken"></param>
         private async Task<long> RunDatabusAsync(
             HierarchicalConfiguration config,
             JobData jobData,
+            BindingExecution bindingExecution,
             CancellationToken cancellationToken)
         {
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
             UpmcSpecificConfig upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
-            var rowCounter = new RowCounterBatchEventsLogger();
+            var rowCounter = new RowCounterBatchEventsLogger(this.loggingRepository, bindingExecution);
             ILogger databusLogger = CreateLogger<DatabusRunner>();
 
             var container = new UnityContainer();
@@ -270,10 +274,10 @@ namespace DataConverter
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
-            var jobEventsLogger = new JobEventsLogger();
+            var jobEventsLogger = new JobEventsLogger(this.loggingRepository, bindingExecution);
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
-            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
-            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger());
+            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(this.loggingRepository, bindingExecution));
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(this.loggingRepository, bindingExecution));
 
             this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
 
