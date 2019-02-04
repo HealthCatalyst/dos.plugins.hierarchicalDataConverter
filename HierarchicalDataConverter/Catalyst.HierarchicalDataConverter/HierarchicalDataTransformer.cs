@@ -113,7 +113,7 @@ namespace DataConverter
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
 
-                return await this.RunDatabusAsync(config, jobData, cancellationToken);
+                return await this.RunDatabusAsync(config, jobData, bindingExecution, cancellationToken);
             }
             catch (Exception e)
             {
@@ -407,10 +407,12 @@ namespace DataConverter
         /// </summary>
         /// <param name="config"></param>
         /// <param name="jobData"></param>
+        /// <param name="bindingExecution"></param>
         /// <param name="cancellationToken"></param>
         private async Task<long> RunDatabusAsync(
             HierarchicalConfiguration config,
             JobData jobData,
+            BindingExecution bindingExecution,
             CancellationToken cancellationToken)
         {
             var container = new UnityContainer();
@@ -423,16 +425,17 @@ namespace DataConverter
                     new UpmcHmacAuthorizationRequestInterceptor(upmcSpecificConfiguration.AppId, upmcSpecificConfiguration.AppSecret, upmcSpecificConfiguration.TenantSecret));
             }
 
-            var rowCounter = new RowCounterBatchEventsLogger();
+            var rowCounter = new RowCounterBatchEventsLogger(this.loggingRepository, bindingExecution);
+
             ILogger databusLogger = CreateLogger<DatabusRunner>();
 
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
-            var jobEventsLogger = new JobEventsLogger();
+            var jobEventsLogger = new JobEventsLogger(this.loggingRepository, bindingExecution);
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
-            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
-            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger());
+            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(this.loggingRepository, bindingExecution));
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(this.loggingRepository, bindingExecution));
 
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
