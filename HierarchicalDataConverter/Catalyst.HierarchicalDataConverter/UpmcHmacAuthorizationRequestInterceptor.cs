@@ -1,7 +1,6 @@
 ﻿namespace DataConverter
 {
     using System;
-    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Security.Cryptography;
@@ -10,9 +9,7 @@
 
     using Fabric.Shared.ReliableHttp.Interfaces;
 
-    using Serilog;
-
-    public class HmacAuthorizationRequestInterceptor : IHttpRequestInterceptor
+    public class UpmcHmacAuthorizationRequestInterceptor : IHttpRequestInterceptor
     {
         private const string RequestContentType = "application/json";
 
@@ -20,16 +17,12 @@
 
         private readonly string appSecretKey;
 
-        private readonly string tenantId;
-
         private readonly string tenantSecretKey;
 
-
-        public HmacAuthorizationRequestInterceptor(string appId, string appSecretKey, string tenantId, string tenantSecretKey)
+        public UpmcHmacAuthorizationRequestInterceptor(string appId, string appSecretKey, string tenantSecretKey)
         {
             this.appId = appId;
             this.appSecretKey = appSecretKey;
-            this.tenantId = tenantId;
             this.tenantSecretKey = tenantSecretKey;
         }
 
@@ -90,8 +83,7 @@
             var encryptedCanonicalString = this.GetHmac(canonicalString);
 
             // 3. Create Auth Header
-            var finalizedAuthHeader = this.GetHeader(this.appId, encryptedCanonicalString);
-
+            var finalizedAuthHeader = this.GetHeader(encryptedCanonicalString);
 
             return finalizedAuthHeader;
         }
@@ -133,6 +125,7 @@
             {
                 throw new ArgumentException("Expected private key not found!");
             }
+
             if (valueBytes == null)
             {
                 throw new ArgumentException("Expected value to encrypt not found!");
@@ -150,9 +143,9 @@
             return signature.Replace("\n", "\\n");
         }
 
-        private string GetHeader(string appId, string hmacSignature)
+        private string GetHeader(string hmacSignature)
         {
-            if (string.IsNullOrEmpty(appId))
+            if (string.IsNullOrEmpty(this.appId))
             {
                 throw new ArgumentException("Missing required parameter: appId");
             }
@@ -162,7 +155,7 @@
                 throw new ArgumentException("Missing required parameter: hMacSignature");
             }
 
-            return $"{appId}:{hmacSignature}";
+            return $"{this.appId}:{hmacSignature}";
         }
     }
 }

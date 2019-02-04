@@ -1,22 +1,33 @@
 ﻿{
-    "DatabusConfiguration": {
-        "ConnectionString": "server=localhost;initial catalog=EDWAdmin;Trusted_Connection=True;",
-        "Url": "https://hc2342.hqcatalyst.local/DataProcessingService/v1/BatchExecutions",
-        "MaximumEntitiesToLoad": 100,
-        "EntitiesPerBatch": 10,
-        "EntitiesPerUploadFile": 100,
-        "LocalSaveFolder": "C:\\Catalyst\\databus",
-        "WriteTemporaryFilesToDisk": true,
-        "WriteDetailedTemporaryFilesToDisk": true,
-        "CompressFiles": false,
-        "UploadToUrl": false
-    },
-    "ClientSpecificConfiguration": {
-        "name": "REDACTED_Name",
-        "BaseUrl": "REDACTED_BaseUrl",
-        "AppId": "REDACTED_AppId",
-        "AppSecret": "REDACTED_AppSecret",
-        "TenantId": "REDACTED_TenantId",
-        "TenantSecret": "REDACTED_TenantSecret"
+  "DatabusConfiguration": {
+    "Url": "http://localhost/MyService/MyEndpoint",
+    "MaximumEntitiesToLoad": 100,
+    "EntitiesPerBatch": 10,
+    "EntitiesPerUploadFile": 100,
+    "LocalSaveFolder": "C:\\Catalyst\\databus",
+    "WriteTemporaryFilesToDisk": true,
+    "WriteDetailedTemporaryFilesToDisk": true,
+    "CompressFiles": false,
+    "UploadToUrl": false,
+    "UrlMethod": "Post",
+    "LogLevel": "Warning" 
+  },
+  "ClientSpecificConfigurations": {
+    "UPMC": {
+      "PHI": {
+        "name": "phi_name",
+        "BaseUrl": "phi_base",
+        "AppId": "phi_app_id",
+        "AppSecret": "phi_app_sec",
+        "TenantSecret": "phi_tenant_sec"
+      },
+      "NonPHI": {
+        "name": "non_phi_name",
+        "BaseUrl": "non_phi_base",
+        "AppId": "non_phi_app_id",
+        "AppSecret": "non_phi_app_sec",
+        "TenantSecret": "non_phi_tenant_sec"
+      }
     }
+  }
 }

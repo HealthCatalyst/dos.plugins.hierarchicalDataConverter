@@ -25,8 +25,10 @@ namespace DataConverter
     using Catalyst.DataProcessing.Shared.Utilities.Client;
     using Catalyst.DataProcessing.Shared.Utilities.Context;
     using Catalyst.DataProcessing.Shared.Utilities.Logging;
+    using Catalyst.Platform.CommonExtensions;
 
     using DataConverter.Loggers;
+    using DataConverter.Properties;
 
     using Fabric.Databus.Client;
     using Fabric.Databus.Config;
@@ -34,8 +36,11 @@ namespace DataConverter
     using Fabric.Shared.ReliableHttp.Interfaces;
 
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     using Serilog;
+    using Serilog.Core;
+    using Serilog.Events;
 
     using Unity;
 
@@ -46,6 +51,8 @@ namespace DataConverter
     {
         public const string NestedBindingTypeName = "Nested";
         private const string SourceEntitySourceColumnSeparator = "__";
+
+        private static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch();
 
         private readonly IMetadataServiceClient metadataServiceClient;
         private readonly IProcessingContextWrapperFactory processingContextWrapperFactory;
@@ -92,19 +99,16 @@ namespace DataConverter
             Entity entity,
             CancellationToken cancellationToken)
         {
+            bindingExecution.CheckWhetherArgumentIsNull(nameof(bindingExecution));
+            binding.CheckWhetherArgumentIsNull(nameof(binding));
+            entity.CheckWhetherArgumentIsNull(nameof(entity));
+
             try
             {
-                this.LogDebug(
-                    string.Join(
-                        "\n\t",
-                        "Entering HierarchicalDataTransformer.TransformDataAsync with:",
-                        $"bindingExecution: {Serialize(bindingExecution)}",
-                        $"binding: {Serialize(binding)}",
-                        $"entity: {Serialize(entity)}"),
-                    bindingExecution);
+                this.LogDebug($"Entering HierarchicalDataTransformer.TransformDataAsync(BindingId = {binding.Id})", bindingExecution);
 
-                HierarchicalConfiguration config = this.GetConfigurationFromJsonFile();
-                this.LogDebug($"HierarchicalConfiguration: {Serialize(config)}", bindingExecution);
+                HierarchicalConfiguration config = await this.GetConfiguration(binding, bindingExecution, entity);
+                this.LogDebug($"Plugin Configuration: {Serialize(config)}", bindingExecution);
 
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
@@ -142,9 +146,9 @@ namespace DataConverter
                 throw;
             }
 
-            // check the binding to see whether it has a destination entity
-            // where it has an endpoint attribute, httpverb
-            return binding.BindingType == NestedBindingTypeName && binding.Id == topMost.Id;
+            return binding.BindingType == NestedBindingTypeName 
+                   && binding.Id == topMost.Id 
+                   && binding.SourceConnection.DataSystemTypeCode == DataSystemTypeCode.SqlServer;
         }
 
         private static void SetupSerilogLogger()
@@ -154,12 +158,45 @@ namespace DataConverter
 
         private static ILogger CreateLogger<T>()
         {
+            levelSwitch.MinimumLevel = LogEventLevel.Warning;
             return new LoggerConfiguration().WriteTo.File(
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs\\Plugins\\HierarchicalDataTransformer\\HierarchicalDataTransformer.log"),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] - [{SourceContext}] - {Message}{NewLine}{Exception}", 
                     shared: true)
-                .MinimumLevel.Information()
+                .MinimumLevel.ControlledBy(levelSwitch)
                 .CreateLogger().ForContext<T>();
+        }
+
+        private static void SwitchLogLevel(string newLogLevel)
+        {
+            if (newLogLevel.IsNullOrWhiteSpace())
+            {
+                return;
+            }
+
+            switch (newLogLevel)
+            {
+                case LogLevel.Verbose:
+                    levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+                    break;
+                case LogLevel.Debug:
+                    levelSwitch.MinimumLevel = LogEventLevel.Debug;
+                    break;
+                case LogLevel.Information:
+                    levelSwitch.MinimumLevel = LogEventLevel.Information;
+                    break;
+                case LogLevel.Warning:
+                    levelSwitch.MinimumLevel = LogEventLevel.Warning;
+                    break;
+                case LogLevel.Error:
+                    levelSwitch.MinimumLevel = LogEventLevel.Error;
+                    break;
+                case LogLevel.Fatal:
+                    levelSwitch.MinimumLevel = LogEventLevel.Fatal;
+                    break;
+                default:
+                    throw new ArgumentException(Resources.InvalidLogLevel.FormatCurrentCulture(newLogLevel));
+            }
         }
 
         private static string Serialize(object obj)
@@ -177,7 +214,14 @@ namespace DataConverter
             return bindings.First(binding => !this.GetAncestorObjectRelationships(binding, bindings).Any());
         }
 
-        private HierarchicalConfiguration GetConfigurationFromJsonFile(string filePath = "config.json")
+        /// <summary>
+        /// Gets configuration from config file (json) unless specified in attributes on the binding or entity
+        /// </summary>
+        /// <param name="binding"></param>
+        /// <param name="bindingExecution"></param>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        private async Task<HierarchicalConfiguration> GetConfiguration(Binding binding, BindingExecution bindingExecution, Entity entity)
         {
             string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
@@ -186,42 +230,157 @@ namespace DataConverter
                 throw new InvalidOperationException("Could not find plugin configuration file base path.");
             }
 
-            string fullPath = Path.Combine(directoryName, filePath);
+            string fullPath = Path.Combine(directoryName, Resources.DefaultConfigFileName);
             string json = File.ReadAllText(fullPath);
             dynamic deserialized = JsonConvert.DeserializeObject(json);
             dynamic databusConfiguration = deserialized.DatabusConfiguration;
-            
+
+            SwitchLogLevel(await this.GetPluginLogLevelSystemAttributeValue() ?? (string)databusConfiguration.LogLevel);
+
             var queryConfig = new QueryConfig
                                   {
-                                      ConnectionString = databusConfiguration.ConnectionString,
-                                      Url = databusConfiguration.Url,
-                                      MaximumEntitiesToLoad = databusConfiguration.MaximumEntitiesToLoad,
-                                      EntitiesPerBatch = databusConfiguration.EntitiesPerBatch,
-                                      EntitiesPerUploadFile = databusConfiguration.EntitiesPerUploadFile,
-                                      LocalSaveFolder = databusConfiguration.LocalSaveFolder,
-                                      WriteTemporaryFilesToDisk = databusConfiguration.WriteTemporaryFilesToDisk,
-                                      WriteDetailedTemporaryFilesToDisk = databusConfiguration.WriteDetailedTemporaryFilesToDisk,
-                                      UploadToUrl = databusConfiguration.UploadToUrl,
-                                      UrlMethod = this.GetHtmlMethod(Convert.ToString(databusConfiguration.UrlMethod))
-            };
+                                      ConnectionString = this.BuildConnectionString(binding),
+                                      Url = this.BuildUrl(entity) ?? databusConfiguration.Url,
+                                      MaximumEntitiesToLoad = this.GetAttributeInt(binding.AttributeValues, AttributeNames.MaxEntitiesToLoad)
+                                                              ?? databusConfiguration.MaximumEntitiesToLoad,
+                                      EntitiesPerBatch = this.GetAttributeInt(binding.AttributeValues, AttributeNames.EntitiesPerBatch)
+                                                         ?? databusConfiguration.EntitiesPerBatch,
+                                      EntitiesPerUploadFile = this.GetAttributeInt(binding.AttributeValues, AttributeNames.EntitiesPerUploadFile)
+                                                              ?? databusConfiguration.EntitiesPerUploadFile,
+                                      LocalSaveFolder = this.BuildLocalSaveFolder(
+                                                            binding.AttributeValues.GetAttributeTextValue(AttributeNames.LocalSaveFolder),
+                                                            binding,
+                                                            bindingExecution) 
+                                                        ?? this.BuildLocalSaveFolder(Convert.ToString(databusConfiguration.LocalSaveFolder), binding, bindingExecution),
+                                      WriteTemporaryFilesToDisk = this.GetAttributeBool(binding.AttributeValues, AttributeNames.WriteTempFilesToDisk) 
+                                                                  ?? databusConfiguration.WriteTemporaryFilesToDisk,
+                                      WriteDetailedTemporaryFilesToDisk = this.GetAttributeBool(binding.AttributeValues, AttributeNames.DetailedTempFiles)
+                                                                          ?? databusConfiguration.WriteDetailedTemporaryFilesToDisk,
+                                      CompressFiles = this.GetAttributeBool(binding.AttributeValues, AttributeNames.CompressFiles) 
+                                                      ?? databusConfiguration.CompressFiles,
+                                      UploadToUrl = this.GetAttributeBool(binding.AttributeValues, AttributeNames.UploadToUrl) 
+                                                    ?? databusConfiguration.UploadToUrl,
+                                      UrlMethod = this.GetHtmlMethod(entity.AttributeValues?.GetAttributeTextValue(AttributeNames.HttpMethod))
+                                                  ?? this.GetHtmlMethod(Convert.ToString(databusConfiguration.UrlMethod)) 
+                                                  ?? HttpMethod.Post
+                                  };
 
-            dynamic upmcSpecificConfiguration = deserialized.ClientSpecificConfiguration;
-            var upmcSpecificConfig = new UpmcSpecificConfig
-                                          {
-                                              Name = upmcSpecificConfiguration.name,
-                                              AppId = upmcSpecificConfiguration.AppId,
-                                              AppSecret = upmcSpecificConfiguration.AppSecret,
-                                              BaseUrl = upmcSpecificConfiguration.BaseUrl,
-                                              TenantId = upmcSpecificConfiguration.TenantId,
-                                              TenantSecret = upmcSpecificConfiguration.TenantSecret
-                                          };
             var hierarchicalConfig = new HierarchicalConfiguration
                                          {
-                                             ClientSpecificConfiguration = upmcSpecificConfig,
+                                             ClientSpecificConfiguration = this.GetClientSpecificConfiguration(entity, deserialized.ClientSpecificConfigurations),
                                              DatabusConfiguration = queryConfig
                                          };
-
+            
             return hierarchicalConfig;
+        }
+
+        private IClientSpecificConfiguration GetClientSpecificConfiguration(Entity entity, dynamic clientSpecificConfigurationsSection)
+        {
+            string clientSpecificConfigurationKey = entity.Connection?.AttributeValues?.GetAttributeTextValue(AttributeNames.ClientSpecificConfigurationKey);
+
+            if (!clientSpecificConfigurationKey.IsNullOrWhiteSpace())
+            {
+                string[] configObjPath = clientSpecificConfigurationKey.Split('.');
+
+                dynamic allConfigurations = clientSpecificConfigurationsSection;
+
+                dynamic selectedConfiguration = allConfigurations;
+                foreach (string pathPart in configObjPath)
+                {
+                    // dig through the json structure to find the correct configuration
+                    selectedConfiguration = selectedConfiguration[pathPart];
+                    
+                    if (selectedConfiguration == null)
+                    {
+                        throw new InvalidOperationException(Resources.CannotRetrieveClientSpecificConfiguration.FormatCurrentCulture(AttributeNames.ClientSpecificConfigurationKey, clientSpecificConfigurationKey));
+                    }
+                }
+
+                IDictionary<string, object> configValues = JsonConvert.DeserializeObject<CaseInsensitiveDictionary<object>>(((JObject)selectedConfiguration).ToString());
+
+                /* TODO - This needs to be fixed to no longer refer to UPMC anywhere in the plugin.
+                          Ideally, there would be a module in this plugin that allows different clients 
+                          to include their own specific logic around things like authentication.  
+                          Then we could move the UpmcHmacAuthorizationRequestInterceptor and the UpmcSpecificConfiguration
+                          out of the plugin and find a way to dynamically pick them up in the following if-block.
+                          Also see To-Do in RunDataBus method if-block around upmcSpecificConfiguration.
+                */
+                if (clientSpecificConfigurationKey.CaseInsensitiveContains("upmc"))
+                {
+                    return new UpmcSpecificConfiguration(configValues);
+                }
+            }
+
+            return null;
+        }
+
+        private async Task<string> GetPluginLogLevelSystemAttributeValue()
+        {
+            ObjectAttributeValue logLevelAttribute = await this.metadataServiceClient.GetSystemAttributeAsync(AttributeNames.HierarchicalPluginLogLevel);
+
+            return logLevelAttribute?.AttributeValue;
+        }
+
+        private string BuildConnectionString(Binding binding)
+        {
+            string connectionString = binding.SourceConnection.AttributeValues?.GetAttributeTextValue(AttributeNames.ConnectionString);
+
+            if (connectionString.IsNullOrWhiteSpace())
+            {
+                if (binding.SourceConnection.Server.IsNullOrWhiteSpace() || binding.SourceConnection.Database.IsNullOrWhiteSpace())
+                {
+                    throw new ArgumentException(Resources.CannotBuildConnectionString);
+                }
+
+                connectionString = Resources.SqlServerConnectionString.FormatCurrentCulture(binding.SourceConnection.Server, binding.SourceConnection.Database);
+            }
+
+            return connectionString;
+        }
+
+        private string BuildUrl(Entity entity)
+        {
+            string serviceUrl = entity?.Connection?.AttributeValues?.GetAttributeTextValue(AttributeNames.ServiceUrl);
+            string endpoint = entity?.AttributeValues?.GetAttributeTextValue(AttributeNames.Endpoint);
+
+            if (serviceUrl == null || endpoint == null)
+            {
+                return null;
+            }
+
+            return string.Join("/", serviceUrl, endpoint);
+        }
+
+        private string BuildLocalSaveFolder(string baseUrl, Binding binding, BindingExecution bindingExecution)
+        {
+            if (baseUrl.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            return Path.Combine(baseUrl, $"{binding.Name}_{bindingExecution.BindingId}_{bindingExecution.Id}");
+        }
+
+        private int? GetAttributeInt(ICollection<ObjectAttributeValue> attributes, string attributeName)
+        {
+            int value;
+            if (int.TryParse(attributes.GetAttributeTextValue(attributeName), out value))
+            {
+                return value;
+            }
+
+            return null;
+        }
+
+        private bool? GetAttributeBool(ICollection<ObjectAttributeValue> attributes, string attributeName)
+        {
+            bool value;
+            if (bool.TryParse(attributes.GetAttributeTextValue(attributeName), out value))
+            {
+                return value;
+            }
+
+            return null;
         }
 
         private async Task<JobData> GetJobData(Binding binding, BindingExecution bindingExecution, Entity destinationEntity)
@@ -254,19 +413,19 @@ namespace DataConverter
             JobData jobData,
             CancellationToken cancellationToken)
         {
-            var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
+            var container = new UnityContainer();
 
-            UpmcSpecificConfig upmcSpecificConfig = (UpmcSpecificConfig)config.ClientSpecificConfiguration;
+            // TODO - need to figure out a way to remove anything UPMC-specific from this plugin.
+            UpmcSpecificConfiguration upmcSpecificConfiguration = (UpmcSpecificConfiguration)config.ClientSpecificConfiguration;
+            if (upmcSpecificConfiguration != null)
+            {
+                container.RegisterInstance<IHttpRequestInterceptor>(
+                    new UpmcHmacAuthorizationRequestInterceptor(upmcSpecificConfiguration.AppId, upmcSpecificConfiguration.AppSecret, upmcSpecificConfiguration.TenantSecret));
+            }
+
             var rowCounter = new RowCounterBatchEventsLogger();
             ILogger databusLogger = CreateLogger<DatabusRunner>();
 
-            var container = new UnityContainer();
-
-            container.RegisterInstance<IHttpRequestInterceptor>(new HmacAuthorizationRequestInterceptor(
-               upmcSpecificConfig.AppId,
-               upmcSpecificConfig.AppSecret,
-               upmcSpecificConfig.TenantId,
-               upmcSpecificConfig.TenantSecret));
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
@@ -274,6 +433,8 @@ namespace DataConverter
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
             container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger());
             container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger());
+
+            var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
             this.LogDebug($"Executing DatabusRunner.RunRestApiPipeline with:\n\tcontainer: {Serialize(container)}\n\tjob: {Serialize(job)}");
 
@@ -381,14 +542,7 @@ namespace DataConverter
 
         private List<IncrementalColumn> GetIncrementalConfigurations(Binding binding, BindingExecution bindingExecution, Field[] sourceEntityFields)
         {
-            this.LogDebug(
-                string.Join(
-                    "\n\t",
-                    "Entering GetIncrementalConfigurations with: ",
-                    $"binding: {Serialize(binding)}",
-                    $"bindingExecution: {Serialize(bindingExecution)}",
-                    $"sourceEntityFields: {Serialize(sourceEntityFields)}"),
-                bindingExecution);
+            this.LogDebug("Checking Incremental Configurations", bindingExecution);
 
             var incrementalColumns = new List<IncrementalColumn>();
 
@@ -477,13 +631,13 @@ namespace DataConverter
                                            {
                                                Entity = this.GetFullyQualifiedTableName(ancestorEntity),
                                                Key = this.CleanJson(
-                                                   ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeName.ParentKeyFields))
+                                                   ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeNames.ParentKeyFields))
                                            }, 
                             MyDestination =
                                 new SqlRelationshipEntity
                                     {
                                         Entity = this.GetFullyQualifiedTableName(sourceEntity),
-                                        Key = this.CleanJson(ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeName.ChildKeyFields))
+                                        Key = this.CleanJson(ancestorRelationship.AttributeValues.GetAttributeTextValue(AttributeNames.ChildKeyFields))
                                     } 
                         });
             }
@@ -500,7 +654,7 @@ namespace DataConverter
 
         private string GetCardinalityFromObjectReference(ObjectReference objectReference)
         {
-            return this.GetAttributeValueFromObjectReference(objectReference, AttributeName.Cardinality).Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
+            return this.GetAttributeValueFromObjectReference(objectReference, AttributeNames.Cardinality).Equals("array", StringComparison.CurrentCultureIgnoreCase) ? "array" : "object";
         }
 
         private string GetAttributeValueFromObjectReference(ObjectReference objectReference, string attributeName)
@@ -518,10 +672,10 @@ namespace DataConverter
         {
             List<ObjectReference> childRelationships = binding.ObjectRelationships.Where(
                     or => or.ChildObjectType == MetadataObjectType.Binding
-                          && or.AttributeValues.First(attr => attr.AttributeName == AttributeName.GenerationGap).ValueToInt()
+                          && or.AttributeValues.First(attr => attr.AttributeName == AttributeNames.GenerationGap).ValueToInt()
                           == 1)
                 .ToList();
-            this.LogDebug($"Found child object relationships for binding with id = {binding.Id}: {Serialize(childRelationships)}");
+            Log.Logger.Verbose($"Found child object relationships for binding with id = {binding.Id}: {Serialize(childRelationships)}");
             return childRelationships;
         }
 
@@ -542,7 +696,7 @@ namespace DataConverter
                         }));
             }
 
-            this.LogDebug($"Found ancestor object relationships for binding with id = {binding.Id}: {Serialize(parentRelationships)}");
+            Log.Logger.Verbose($"Found ancestor object relationships for binding with id = {binding.Id}: {Serialize(parentRelationships)}");
             return parentRelationships;
         }
 
@@ -555,7 +709,7 @@ namespace DataConverter
 
             SourceEntityReference entityReference = binding.SourcedByEntities.First();
             Entity entity = await this.metadataServiceClient.GetEntityAsync(entityReference.SourceEntityId);
-            this.LogDebug($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
+            Log.Logger.Verbose($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
             return entity;
         }
 
@@ -613,15 +767,22 @@ namespace DataConverter
 
         private HttpMethod GetHtmlMethod(string methodName)
         {
+            if (methodName.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
             HttpMethod urlMethod;
             switch (methodName)
             {
                 case nameof(HttpMethod.Put):
                     urlMethod = HttpMethod.Put;
                     break;
-                default:
+                case nameof(HttpMethod.Post):
                     urlMethod = HttpMethod.Post;
                     break;
+                default:
+                    throw new ArgumentException(Resources.InvalidHttpMethod.FormatCurrentCulture(methodName));
             }
 
             return urlMethod;
@@ -632,18 +793,24 @@ namespace DataConverter
             public const string Binding = "Binding";
         }
 
-        private static class AttributeName
-        {
-            public const string Cardinality = "Cardinality";
-            public const string ParentKeyFields = "ParentKeyFields";
-            public const string ChildKeyFields = "ChildKeyFields";
-            public const string GenerationGap = "GenerationGap";
-        }
-
         private static class IncrementalOperator
         {
             public const string GreaterThanOrEqualTo = "GreaterThanOrEqualTo";
         }
 
+        private static class LogLevel
+        {
+            public const string Verbose = "Verbose";
+
+            public const string Debug = "Debug";
+
+            public const string Information = "Information";
+
+            public const string Warning = "Warning";
+
+            public const string Error = "Error";
+
+            public const string Fatal = "Fatal";
+        }
     }
 }
