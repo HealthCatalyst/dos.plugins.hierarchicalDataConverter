@@ -9,8 +9,7 @@
     "WriteDetailedTemporaryFilesToDisk": true,
     "CompressFiles": false,
     "UploadToUrl": false,
-    "UrlMethod": "Post",
-    "LogLevel": "Warning" 
+    "UrlMethod": "Post"
   },
   "ClientSpecificConfigurations": {
     "UPMC": {
