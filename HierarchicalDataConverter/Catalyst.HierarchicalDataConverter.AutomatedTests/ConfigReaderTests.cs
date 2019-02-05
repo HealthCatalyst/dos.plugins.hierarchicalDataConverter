@@ -334,7 +334,7 @@
                                                                     }
                                                             }
                                                     },
-                                            AttributeValues = { new ObjectAttributeValue { AttributeName = AttributeNames.Endpoint, AttributeValue = "SomeEndpoint" } }
+                                            AttributeValues = { new ObjectAttributeValue { AttributeName = AttributeNames.ServiceEndpoint, AttributeValue = "SomeEndpoint" } }
                                         };
             var args = new object[] { binding, bindingExecution, destinationEntity };
 
@@ -480,7 +480,11 @@
                               {
                                   Name = "MyNestedBinding",
                                   SourceConnection = new Connection { Server = "localhost", Database = "SAM" },
-                                  AttributeValues = { new ObjectAttributeValue { AttributeName = AttributeNames.LocalSaveFolder, AttributeValue = "D:\\MyDirectory" } }
+                                  AttributeValues =
+                                      {
+                                          new ObjectAttributeValue { AttributeName = AttributeNames.LocalSaveFolder, AttributeValue = "D:\\MyDirectory" },
+                                          new ObjectAttributeValue { AttributeName = AttributeNames.WriteTempFilesToDisk, AttributeValue = "False" }
+                                      }
                               };
             var bindingExecution = new BindingExecution { BindingId = 1, Id = 2 };
             var destinationEntity = new Entity { Connection = new Connection() };

@@ -65,7 +65,7 @@ namespace DataConverter
         /// </summary>
         static HierarchicalDataTransformer()
         {
-            SetupSerilogLogger();
+            SetupSerilogLogger(LogEventLevel.Warning); // Default to Warning
         }
 
         /// <summary>
@@ -105,9 +105,11 @@ namespace DataConverter
 
             try
             {
+                SwitchLogLevel(await this.GetPluginLogLevelSystemAttributeValue() ?? "Warning");
+
                 this.LogDebug($"Entering HierarchicalDataTransformer.TransformDataAsync(BindingId = {binding.Id})", bindingExecution);
 
-                HierarchicalConfiguration config = await this.GetConfiguration(binding, bindingExecution, entity);
+                HierarchicalConfiguration config = this.GetConfiguration(binding, bindingExecution, entity);
                 this.LogDebug($"Plugin Configuration: {Serialize(config)}", bindingExecution);
 
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
@@ -151,14 +153,18 @@ namespace DataConverter
                    && binding.SourceConnection.DataSystemTypeCode == DataSystemTypeCode.SqlServer;
         }
 
-        private static void SetupSerilogLogger()
+        private static void SetupSerilogLogger(LogEventLevel? level = null)
         {
-            Log.Logger = CreateLogger<HierarchicalDataTransformer>();
+            Log.Logger = CreateLogger<HierarchicalDataTransformer>(level);
         }
 
-        private static ILogger CreateLogger<T>()
+        private static ILogger CreateLogger<T>(LogEventLevel? level = null)
         {
-            levelSwitch.MinimumLevel = LogEventLevel.Warning;
+            if (level.HasValue)
+            {
+                levelSwitch.MinimumLevel = level.Value;
+            }
+
             return new LoggerConfiguration().WriteTo.File(
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs\\Plugins\\HierarchicalDataTransformer\\HierarchicalDataTransformer.log"),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] - [{SourceContext}] - {Message}{NewLine}{Exception}", 
@@ -221,7 +227,7 @@ namespace DataConverter
         /// <param name="bindingExecution"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        private async Task<HierarchicalConfiguration> GetConfiguration(Binding binding, BindingExecution bindingExecution, Entity entity)
+        private HierarchicalConfiguration GetConfiguration(Binding binding, BindingExecution bindingExecution, Entity entity)
         {
             string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
@@ -234,8 +240,6 @@ namespace DataConverter
             string json = File.ReadAllText(fullPath);
             dynamic deserialized = JsonConvert.DeserializeObject(json);
             dynamic databusConfiguration = deserialized.DatabusConfiguration;
-
-            SwitchLogLevel(await this.GetPluginLogLevelSystemAttributeValue() ?? (string)databusConfiguration.LogLevel);
 
             var queryConfig = new QueryConfig
                                   {
@@ -265,6 +269,8 @@ namespace DataConverter
                                                   ?? HttpMethod.Post
                                   };
 
+            this.CreateLocalSaveFolderIfNotExists(queryConfig);
+
             var hierarchicalConfig = new HierarchicalConfiguration
                                          {
                                              ClientSpecificConfiguration = this.GetClientSpecificConfiguration(entity, deserialized.ClientSpecificConfigurations),
@@ -272,6 +278,20 @@ namespace DataConverter
                                          };
             
             return hierarchicalConfig;
+        }
+
+        private void CreateLocalSaveFolderIfNotExists(QueryConfig queryConfig)
+        {
+            if (!queryConfig.WriteTemporaryFilesToDisk)
+            {
+                return;
+            }
+
+            if (!Directory.Exists(queryConfig.LocalSaveFolder))
+            {
+                Directory.CreateDirectory(queryConfig.LocalSaveFolder);
+                this.LogDebug($"Created local save folder: {queryConfig.LocalSaveFolder}");
+            }
         }
 
         private IClientSpecificConfiguration GetClientSpecificConfiguration(Entity entity, dynamic clientSpecificConfigurationsSection)
@@ -305,7 +325,7 @@ namespace DataConverter
                           out of the plugin and find a way to dynamically pick them up in the following if-block.
                           Also see To-Do in RunDataBus method if-block around upmcSpecificConfiguration.
                 */
-                if (clientSpecificConfigurationKey.CaseInsensitiveContains("upmc"))
+                if (clientSpecificConfigurationKey.IndexOf("upmc", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return new UpmcSpecificConfiguration(configValues);
                 }
@@ -341,7 +361,7 @@ namespace DataConverter
         private string BuildUrl(Entity entity)
         {
             string serviceUrl = entity?.Connection?.AttributeValues?.GetAttributeTextValue(AttributeNames.ServiceUrl);
-            string endpoint = entity?.AttributeValues?.GetAttributeTextValue(AttributeNames.Endpoint);
+            string endpoint = entity?.AttributeValues?.GetAttributeTextValue(AttributeNames.ServiceEndpoint);
 
             if (serviceUrl == null || endpoint == null)
             {
@@ -417,7 +437,7 @@ namespace DataConverter
         {
             var container = new UnityContainer();
 
-            // TODO - need to figure out a way to remove anything UPMC-specific from this plugin.
+            // TODO - need to eventually remove anything UPMC-specific from this plugin.
             UpmcSpecificConfiguration upmcSpecificConfiguration = (UpmcSpecificConfiguration)config.ClientSpecificConfiguration;
             if (upmcSpecificConfiguration != null)
             {
@@ -445,10 +465,10 @@ namespace DataConverter
             {
                 await this.runner.RunRestApiPipelineAsync(container, job, cancellationToken);
             }
-            catch (AggregateException e)
+            catch (Exception e)
             {
                 this.LogError($"Databus threw an error: {e}", e);
-                throw e.Flatten();
+                throw;
             }
 
             SetupSerilogLogger(); // re-setup logger as Databus is closing it
@@ -607,7 +627,7 @@ namespace DataConverter
 
             if (!list.Any())
             {
-                throw new Exception($"No primary keys found for entity {sourceEntity.EntityName}");
+                throw new Exception($"The HierarchicalDataConverter plugin requires that a primary key be set on the top level entity: {sourceEntity.EntityName}. Please designate a primary key.");
             }
 
             return string.Join(",", list);

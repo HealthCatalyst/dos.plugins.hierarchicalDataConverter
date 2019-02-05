@@ -2,7 +2,7 @@
 {
     public static class AttributeNames
     {
-        // Hierarchical Plugin Attributes
+        // Hierarchical Plugin Attributes (System)
         public const string HierarchicalPluginLogLevel = "HierarchicalPlugin.LogLevel";
         
         // Hierarchical Binding Attributes
@@ -16,7 +16,6 @@
 
         public const string ConnectionString = "ConnectionString";
 
-        public const string ClientSpecificConfigurationKey = "ClientSpecificConfigurationKey";
 
         // Databus specific attributes
         public const string MaxEntitiesToLoad = "HierarchicalPlugin.MaxEntitiesToLoad";
@@ -38,9 +37,11 @@
         // Entity Attributes
         public const string HttpMethod = "HttpMethod";
 
-        public const string Endpoint = "Endpoint";
+        public const string ServiceEndpoint = "ServiceEndpoint";
 
-        // Binding Attributes
+        // Connection Attributes
         public const string ServiceUrl = "ServiceUrl";
+
+        public const string ClientSpecificConfigurationKey = "ClientSpecificConfigurationKey";
     }
 }
