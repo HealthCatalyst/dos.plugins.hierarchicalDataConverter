@@ -105,7 +105,7 @@ namespace DataConverter
 
             try
             {
-                SwitchLogLevel(await this.GetPluginLogLevelSystemAttributeValue() ?? "Warning");
+                SwitchLogLevel(await this.GetPluginLogLevelSystemAttributeValue() ?? LogLevel.Warning);
 
                 this.LogDebug($"Entering HierarchicalDataTransformer.TransformDataAsync(BindingId = {binding.Id})", bindingExecution);
 
