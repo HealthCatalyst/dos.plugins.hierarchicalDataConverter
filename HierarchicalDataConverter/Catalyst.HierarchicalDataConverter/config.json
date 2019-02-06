@@ -1,23 +1,32 @@
 ﻿{
-    "DatabusConfiguration": {
-        "ConnectionString": "server=localhost;initial catalog=EDWAdmin;Trusted_Connection=True;",
-        "Url": "https://hc2342.hqcatalyst.local/DataProcessingService/v1/BatchExecutions",
-        "MaximumEntitiesToLoad": 100,
-        "EntitiesPerBatch": 10,
-        "EntitiesPerUploadFile": 100,
-        "LocalSaveFolder": "C:\\Catalyst\\databus",
-        "WriteTemporaryFilesToDisk": true,
-        "WriteDetailedTemporaryFilesToDisk": true,
-        "CompressFiles": false,
-        "UploadToUrl": false,
-        "TopLevelKeyColumn": "KeyLevel0"
-    },
-    "ClientSpecificConfiguration": {
+  "DatabusConfiguration": {
+    "Url": "https://hc2342.hqcatalyst.local/DataProcessingService/v1/BatchExecutions",
+    "MaximumEntitiesToLoad": 100,
+    "EntitiesPerBatch": 10,
+    "EntitiesPerUploadFile": 100,
+    "LocalSaveFolder": "C:\\Catalyst\\databus",
+    "WriteTemporaryFilesToDisk": true,
+    "WriteDetailedTemporaryFilesToDisk": true,
+    "CompressFiles": false,
+    "UploadToUrl": false,
+    "UrlMethod": "Post"
+  },
+  "ClientSpecificConfigurations": {
+    "UPMC": {
+      "PHI": {
         "name": "REDACTED",
         "BaseUrl": "REDACTED",
         "AppId": "REDACTED",
         "AppSecret": "REDACTED",
-        "TenantId": "REDACTED",
         "TenantSecret": "REDACTED"
+      },
+      "NonPHI": {
+        "name": "REDACTED",
+        "BaseUrl": "REDACTED",
+        "AppId": "REDACTED",
+        "AppSecret": "REDACTED",
+        "TenantSecret": "REDACTED"
+      }
     }
+  }
 }

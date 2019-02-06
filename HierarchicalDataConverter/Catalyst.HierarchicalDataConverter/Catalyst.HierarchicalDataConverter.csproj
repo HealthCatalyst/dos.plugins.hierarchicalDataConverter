@@ -219,19 +219,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AttributeNames.cs" />
     <Compile Include="BindingReference.cs" />
+    <Compile Include="CaseInsensitiveDictionary.cs" />
     <Compile Include="ChildBindingNoOpDataTransformer.cs" />
     <Compile Include="HierarchicalConfiguration.cs" />
     <Compile Include="HierarchicalDataTransformer.cs" />
-    <Compile Include="HmacAuthorizationRequestInterceptor.cs" />
+    <Compile Include="UpmcHmacAuthorizationRequestInterceptor.cs" />
     <Compile Include="IClientSpecificConfiguration.cs" />
     <Compile Include="Loggers\JobEventsLogger.cs" />
     <Compile Include="Loggers\MyHttpResponseLogger.cs" />
     <Compile Include="Loggers\QuerySqlLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="RestApiDestinationSystem.cs" />
     <Compile Include="RowCounterBatchEventsLogger.cs" />
-    <Compile Include="UpmcSpecificConfig.cs" />
+    <Compile Include="UpmcSpecificConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -244,6 +251,12 @@
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
