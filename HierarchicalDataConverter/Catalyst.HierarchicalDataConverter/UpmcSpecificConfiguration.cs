@@ -2,10 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
 
     using Catalyst.Platform.CommonExtensions;
 
     using DataConverter.Properties;
+
+    using Newtonsoft.Json;
 
     public class UpmcSpecificConfiguration : IClientSpecificConfiguration
     {
@@ -47,5 +50,11 @@
         public string AppSecret { get; set; }
 
         public string TenantSecret { get; set; }
+
+        public override string ToString()
+        {
+            string serialized = JsonConvert.SerializeObject(this);
+            return serialized.Replace(this.TenantSecret, "********").Replace(this.AppSecret, "********");
+        }
     }
 }
