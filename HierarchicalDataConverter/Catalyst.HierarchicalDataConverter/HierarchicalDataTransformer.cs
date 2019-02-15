@@ -110,7 +110,7 @@ namespace DataConverter
                 this.LogDebug($"Entering HierarchicalDataTransformer.TransformDataAsync(BindingId = {binding.Id})", bindingExecution);
 
                 HierarchicalConfiguration config = this.GetConfiguration(binding, bindingExecution, entity);
-                this.LogDebug($"Plugin Configuration: {Serialize(config)}", bindingExecution);
+                this.LogDebug($"Plugin Configuration: {config}", bindingExecution);
 
                 JobData jobData = await this.GetJobData(binding, bindingExecution, entity);
                 this.LogDebug($"JobData: {Serialize(jobData)}", bindingExecution);
