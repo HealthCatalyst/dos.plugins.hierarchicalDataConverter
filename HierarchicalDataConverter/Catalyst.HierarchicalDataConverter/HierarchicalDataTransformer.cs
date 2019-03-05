@@ -747,12 +747,14 @@ namespace DataConverter
 
             Field[] sourceEntityFields = await this.metadataServiceClient.GetEntityFieldsAsync(sourceEntity);
 
-            // Add all Active fields (based on destination entity)
+            // Add all Active, non-system fields (based on destination entity)
             columns.AddRange(
                 sourceEntityFields
                     .Where(
                         field => destinationEntity.Fields.Any(
-                            destinationField => destinationField.FieldName == $"{sourceEntity.EntityName}{SourceEntitySourceColumnSeparator}{field.FieldName}" && destinationField.Status != FieldStatus.Omitted))
+                            destinationField => !field.IsSystemField 
+                                                && destinationField.Status != FieldStatus.Omitted
+                                                && destinationField.FieldName == $"{sourceEntity.EntityName}{SourceEntitySourceColumnSeparator}{field.FieldName}"))
                     .Select(f => new SqlEntityColumnMapping { Name = f.FieldName }));
 
             return columns;
