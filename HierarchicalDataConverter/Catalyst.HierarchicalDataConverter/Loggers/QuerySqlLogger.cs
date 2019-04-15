@@ -13,13 +13,10 @@
 
     public class QuerySqlLogger : IQuerySqlLogger
     {
-        private readonly ILoggingRepository loggingRepository;
-
         private readonly BindingExecution bindingExecution;
 
-        public QuerySqlLogger(ILoggingRepository loggingRepository, BindingExecution bindingExecution)
+        public QuerySqlLogger(BindingExecution bindingExecution)
         {
-            this.loggingRepository = loggingRepository;
             this.bindingExecution = bindingExecution;
         }
 
@@ -27,14 +24,14 @@
         {
             var parametersAsString = string.Join(",", querySqlLogEvent.SqlParameters.Select(a => $"{a.Key} = {a.Value}").ToList());
             var information = $"SqlQueryCompleted: {querySqlLogEvent.Path} {querySqlLogEvent.TableOrView} {querySqlLogEvent.RowCount} {querySqlLogEvent.TimeElapsed:c} {querySqlLogEvent.Sql} {parametersAsString}";
-            this.loggingRepository.LogInformation(this.bindingExecution, information);
+            LoggingHelper.Info(information, this.bindingExecution);
             Log.Logger.Debug(information);
         }
 
         public void SqlQueryStarted(QuerySqlLogEvent querySqlLogEvent)
         {
             var information = $"SqlQueryStarted: {querySqlLogEvent.Path} {querySqlLogEvent.TableOrView}";
-            this.loggingRepository.LogInformation(this.bindingExecution, information);
+            LoggingHelper.Info(information, this.bindingExecution);
             Log.Logger.Debug(information);
         }
     }

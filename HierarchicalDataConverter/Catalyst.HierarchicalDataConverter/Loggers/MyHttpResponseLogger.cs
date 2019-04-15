@@ -15,13 +15,10 @@
 
     public class MyHttpResponseLogger : IHttpResponseLogger
     {
-        private readonly ILoggingRepository loggingRepository;
-
         private readonly BindingExecution bindingExecution;
 
-        public MyHttpResponseLogger(ILoggingRepository loggingRepository, BindingExecution bindingExecution)
+        public MyHttpResponseLogger(BindingExecution bindingExecution)
         {
-            this.loggingRepository = loggingRepository;
             this.bindingExecution = bindingExecution;
         }
 
@@ -36,7 +33,7 @@
         {
             var content = await responseContent.ReadAsStringAsync();
             var information = $"{responseStatusCode} {httpMethod} {fullUri} {stopwatchElapsedMilliseconds}ms {content}";
-            this.loggingRepository.LogInformation(this.bindingExecution, information);
+            LoggingHelper.Info(information, this.bindingExecution);
             Log.Logger.Information(information);
         }
     }

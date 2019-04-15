@@ -49,9 +49,10 @@
 
             var serviceClientMock = new Mock<IMetadataServiceClient>();
             var processingContextWrapperFactoryMock = new Mock<IProcessingContextWrapperFactory>();
-            var loggingRepositoryMock = new Mock<ILoggingRepository>();
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object, loggingRepositoryMock.Object);
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
             this.privateMethodRunner = new PrivateObject(converter);
+
+            MockLogAppender.InitializeLogging();
         }
 
         [TestMethod]

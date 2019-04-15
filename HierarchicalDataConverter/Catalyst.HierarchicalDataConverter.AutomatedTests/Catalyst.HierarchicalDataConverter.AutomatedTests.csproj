@@ -43,13 +43,13 @@
       <HintPath>..\packages\Castle.Core.4.3.1\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="Catalyst.DataProcessing.Engine.PluginInterfaces, Version=4.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Catalyst.DataProcessing.Engine.Plugins.4.4.1812.1201\lib\net461\Catalyst.DataProcessing.Engine.PluginInterfaces.dll</HintPath>
+      <HintPath>..\packages\Catalyst.DataProcessing.Engine.Plugins.4.5.1904.901\lib\net461\Catalyst.DataProcessing.Engine.PluginInterfaces.dll</HintPath>
     </Reference>
-    <Reference Include="Catalyst.DataProcessing.Shared.Models, Version=4.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Catalyst.DataProcessing.Engine.Plugins.4.4.1812.1201\lib\net461\Catalyst.DataProcessing.Shared.Models.dll</HintPath>
+    <Reference Include="Catalyst.DataProcessing.Shared.Models, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Catalyst.DataProcessing.Engine.Plugins.4.5.1904.901\lib\net461\Catalyst.DataProcessing.Shared.Models.dll</HintPath>
     </Reference>
-    <Reference Include="Catalyst.DataProcessing.Shared.Utilities, Version=4.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Catalyst.DataProcessing.Shared.Utilities.4.4.1812.1201\lib\net461\Catalyst.DataProcessing.Shared.Utilities.dll</HintPath>
+    <Reference Include="Catalyst.DataProcessing.Shared.Utilities, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Catalyst.DataProcessing.Shared.Utilities.4.5.1811.1301\lib\net461\Catalyst.DataProcessing.Shared.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="Catalyst.Platform.CommonExtensions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=e99707dc63721e10, processorArchitecture=MSIL">
       <HintPath>..\packages\Catalyst.Platform.CommonExtensions.1.0.11\lib\net461\Catalyst.Platform.CommonExtensions.dll</HintPath>

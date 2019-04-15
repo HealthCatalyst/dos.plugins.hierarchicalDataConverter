@@ -56,7 +56,6 @@ namespace DataConverter
 
         private readonly IMetadataServiceClient metadataServiceClient;
         private readonly IProcessingContextWrapperFactory processingContextWrapperFactory;
-        private readonly ILoggingRepository loggingRepository;
 
         private readonly DatabusRunner runner;
 
@@ -74,11 +73,10 @@ namespace DataConverter
         /// <param name="metadataServiceClient"></param>
         /// <param name="processingContextWrapperFactory"></param>
         /// <param name="loggingRepository"></param>
-        public HierarchicalDataTransformer(IMetadataServiceClient metadataServiceClient, IProcessingContextWrapperFactory processingContextWrapperFactory, ILoggingRepository loggingRepository)
+        public HierarchicalDataTransformer(IMetadataServiceClient metadataServiceClient, IProcessingContextWrapperFactory processingContextWrapperFactory)
         {
             this.metadataServiceClient = metadataServiceClient ?? throw new ArgumentException("metadataServiceClient cannot be null.");
             this.processingContextWrapperFactory = processingContextWrapperFactory ?? throw new ArgumentException("ProcessingContextWrapperFactory cannot be null.");
-            this.loggingRepository = loggingRepository ?? throw new ArgumentException("log4NetLogger cannot be null.");
 
             this.runner = new DatabusRunner();
 
@@ -445,17 +443,17 @@ namespace DataConverter
                     new UpmcHmacAuthorizationRequestInterceptor(upmcSpecificConfiguration.AppId, upmcSpecificConfiguration.AppSecret, upmcSpecificConfiguration.TenantSecret));
             }
 
-            var rowCounter = new RowCounterBatchEventsLogger(this.loggingRepository, bindingExecution);
+            var rowCounter = new RowCounterBatchEventsLogger(bindingExecution);
 
             ILogger databusLogger = CreateLogger<DatabusRunner>();
 
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
-            var jobEventsLogger = new JobEventsLogger(this.loggingRepository, bindingExecution);
+            var jobEventsLogger = new JobEventsLogger(bindingExecution);
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
-            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(this.loggingRepository, bindingExecution));
-            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(this.loggingRepository, bindingExecution));
+            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(bindingExecution));
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(bindingExecution));
 
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
@@ -776,7 +774,7 @@ namespace DataConverter
 
             if (bindingExecution != null)
             {
-                this.loggingRepository.LogInformation(bindingExecution, message);
+                LoggingHelper.Info(message, bindingExecution);
             }
         }
 
@@ -786,7 +784,7 @@ namespace DataConverter
 
             if (bindingExecution != null)
             {
-                this.loggingRepository.LogError(bindingExecution, e);
+                LoggingHelper.Error(execution: bindingExecution, exception: e);
             }
         }
 
