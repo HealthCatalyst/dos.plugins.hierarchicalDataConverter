@@ -6,7 +6,7 @@
         public const string HierarchicalPluginLogLevel = "HierarchicalPlugin.LogLevel";
         
         // Hierarchical Binding Attributes
-        public const string Cardinality = "BROKENCardinality";
+        public const string dsfsdfsdCardinality = "BROKENCardinality";
 
         public const string ParentKeyFields = "ParentKeyFields";
 
