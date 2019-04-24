@@ -10,10 +10,12 @@
 
     public class RowCounterBatchEventsLogger : IBatchEventsLogger
     {
+        private readonly ILogger pluginLogger;
         private readonly BindingExecution bindingExecution;
 
-        public RowCounterBatchEventsLogger(BindingExecution bindingExecution)
+        public RowCounterBatchEventsLogger(ILogger logger, BindingExecution bindingExecution)
         {
+            this.pluginLogger = logger;
             this.bindingExecution = bindingExecution;
         }
 
@@ -21,14 +23,14 @@
         {
             var information = $"BatchCompleted: {batchCompletedQueueItem.BatchNumber}  Uploaded Entities: {batchCompletedQueueItem.NumberOfEntitiesUploaded}. [start:{batchCompletedQueueItem.Start}, end:{batchCompletedQueueItem.End}]";
             LoggingHelper.Info(information, this.bindingExecution);
-            Log.Logger.Information(information);
+            this.pluginLogger.Information(information);
         }
 
         public void BatchStarted(IBatchCompletedQueueItem batchStartedQueueItem)
         {
             var information = $"BatchStarted: {batchStartedQueueItem.BatchNumber} [start:{batchStartedQueueItem.Start}, end:{batchStartedQueueItem.End}]";
             LoggingHelper.Info(information, this.bindingExecution);
-            Log.Logger.Debug(information);
+            this.pluginLogger.Debug(information);
         }
     }
 }

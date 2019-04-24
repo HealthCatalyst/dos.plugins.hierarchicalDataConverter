@@ -58,15 +58,8 @@ namespace DataConverter
         private readonly IProcessingContextWrapperFactory processingContextWrapperFactory;
 
         private readonly DatabusRunner runner;
-
-        /// <summary>
-        /// Setup Logger
-        /// </summary>
-        static HierarchicalDataTransformer()
-        {
-            SetupSerilogLogger(LogEventLevel.Warning); // Default to Warning
-        }
-
+        private ILogger pluginLogger;
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="HierarchicalDataTransformer"/> class.
         /// </summary>
@@ -75,6 +68,8 @@ namespace DataConverter
         /// <param name="loggingRepository"></param>
         public HierarchicalDataTransformer(IMetadataServiceClient metadataServiceClient, IProcessingContextWrapperFactory processingContextWrapperFactory)
         {
+            SetupSerilogLogger(LogEventLevel.Warning); // Default to Warning
+
             this.metadataServiceClient = metadataServiceClient ?? throw new ArgumentException("metadataServiceClient cannot be null.");
             this.processingContextWrapperFactory = processingContextWrapperFactory ?? throw new ArgumentException("ProcessingContextWrapperFactory cannot be null.");
 
@@ -151,9 +146,9 @@ namespace DataConverter
                    && binding.SourceConnection.DataSystemTypeCode == DataSystemTypeCode.SqlServer;
         }
 
-        private static void SetupSerilogLogger(LogEventLevel? level = null)
+        private void SetupSerilogLogger(LogEventLevel? level = null)
         {
-            Log.Logger = CreateLogger<HierarchicalDataTransformer>(level);
+            this.pluginLogger = CreateLogger<HierarchicalDataTransformer>(level);
         }
 
         private static ILogger CreateLogger<T>(LogEventLevel? level = null)
@@ -443,17 +438,17 @@ namespace DataConverter
                     new UpmcHmacAuthorizationRequestInterceptor(upmcSpecificConfiguration.AppId, upmcSpecificConfiguration.AppSecret, upmcSpecificConfiguration.TenantSecret));
             }
 
-            var rowCounter = new RowCounterBatchEventsLogger(bindingExecution);
+            var rowCounter = new RowCounterBatchEventsLogger(this.pluginLogger, bindingExecution);
 
             ILogger databusLogger = CreateLogger<DatabusRunner>();
 
             container.RegisterInstance(databusLogger);
             container.RegisterInstance<IBatchEventsLogger>(rowCounter);
 
-            var jobEventsLogger = new JobEventsLogger(bindingExecution);
+            var jobEventsLogger = new JobEventsLogger(this.pluginLogger, bindingExecution);
             container.RegisterInstance<IJobEventsLogger>(jobEventsLogger);
-            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(bindingExecution));
-            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(bindingExecution));
+            container.RegisterInstance<IQuerySqlLogger>(new QuerySqlLogger(this.pluginLogger, bindingExecution));
+            container.RegisterInstance<IHttpResponseLogger>(new MyHttpResponseLogger(this.pluginLogger, bindingExecution));
 
             var job = new Job { Config = config.DatabusConfiguration, Data = jobData };
 
@@ -693,10 +688,10 @@ namespace DataConverter
         {
             List<ObjectReference> childRelationships = binding.ObjectRelationships.Where(
                     or => or.ChildObjectType == MetadataObjectType.Binding
-                          && or.AttributeValues.First(attr => attr.AttributeName == AttributeNames.GenerationGap).ValueToInt()
+                          && or.AttributeValues.FirstOrDefault(attr => attr.AttributeName == AttributeNames.GenerationGap)?.ValueToInt()
                           == 1)
                 .ToList();
-            Log.Logger.Verbose($"Found child object relationships for binding with id = {binding.Id}: {Serialize(childRelationships)}");
+            this.pluginLogger.Verbose($"Found child object relationships for binding with id = {binding.Id}: {Serialize(childRelationships)}");
             return childRelationships;
         }
 
@@ -717,7 +712,7 @@ namespace DataConverter
                         }));
             }
 
-            Log.Logger.Verbose($"Found ancestor object relationships for binding with id = {binding.Id}: {Serialize(parentRelationships)}");
+            this.pluginLogger.Verbose($"Found ancestor object relationships for binding with id = {binding.Id}: {Serialize(parentRelationships)}");
             return parentRelationships;
         }
 
@@ -730,7 +725,7 @@ namespace DataConverter
 
             SourceEntityReference entityReference = binding.SourcedByEntities.First();
             Entity entity = await this.metadataServiceClient.GetEntityAsync(entityReference.SourceEntityId);
-            Log.Logger.Verbose($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
+            this.pluginLogger.Verbose($"Found source destinationEntity ({entity.EntityName}) for binding (id = {binding.Id})");
             return entity;
         }
 
@@ -770,7 +765,7 @@ namespace DataConverter
 
         private void LogDebug(string message, BindingExecution bindingExecution = null)
         {
-            Log.Logger.Debug(message);
+            this.pluginLogger.Debug(message);
 
             if (bindingExecution != null)
             {
@@ -780,7 +775,7 @@ namespace DataConverter
 
         private void LogError(string message, Exception e, BindingExecution bindingExecution = null)
         {
-            Log.Logger.Error(message, e);
+            this.pluginLogger.Error(message, e);
 
             if (bindingExecution != null)
             {
