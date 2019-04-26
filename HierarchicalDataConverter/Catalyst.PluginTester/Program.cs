@@ -284,9 +284,6 @@
                 var testProcessingContextWrapper = new TestProcessingContextWrapper();
                 unityContainer.RegisterInstance<IProcessingContextWrapperFactory>(new TestProcessingContextWrapperFactory(testProcessingContextWrapper));
 
-                var testLoggingRepository = new TestLoggingRepository();
-                unityContainer.RegisterInstance<ILoggingRepository>(testLoggingRepository);
-
                 var pluginLoader = new PluginLoader();
                 pluginLoader.LoadPlugins();
                 pluginLoader.RegisterPlugins(unityContainer);

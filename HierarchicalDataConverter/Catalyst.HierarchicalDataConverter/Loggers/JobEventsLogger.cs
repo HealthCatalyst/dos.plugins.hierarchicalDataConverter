@@ -10,14 +10,13 @@
 
     public class JobEventsLogger : IJobEventsLogger
     {
-        private readonly ILoggingRepository loggingRepository;
+        private readonly ILogger pluginLogger;
 
         private readonly BindingExecution bindingExecution;
-
-
-        public JobEventsLogger(ILoggingRepository loggingRepository, BindingExecution bindingExecution)
+        
+        public JobEventsLogger(ILogger logger, BindingExecution bindingExecution)
         {
-            this.loggingRepository = loggingRepository;
+            this.pluginLogger = logger;
             this.bindingExecution = bindingExecution;
         }
 
@@ -26,8 +25,8 @@
         public void JobCompleted(IJobCompletedQueueItem jobCompletedQueueItem)
         {
             var information = $"JobCompleted: Entities: {jobCompletedQueueItem.NumberOfEntities}";
-            this.loggingRepository.LogInformation(this.bindingExecution, information);
-            Log.Logger.Information(information);
+            LoggingHelper.Info(information, this.bindingExecution);
+            this.pluginLogger.Information(information);
             this.NumberOfEntities = jobCompletedQueueItem.NumberOfEntities;
         }
     }

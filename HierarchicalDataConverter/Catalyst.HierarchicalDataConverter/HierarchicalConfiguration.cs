@@ -14,7 +14,7 @@
 
         public override string ToString()
         {
-            return $"DatabusConfiguration: {JsonConvert.SerializeObject(this.DatabusConfiguration)},\nClientSpecificConfiguration ({this.ClientSpecificConfiguration.GetType()}): {this.ClientSpecificConfiguration}";
+            return $"DatabusConfiguration: {JsonConvert.SerializeObject(this.DatabusConfiguration)},\nClientSpecificConfiguration ({this.ClientSpecificConfiguration?.GetType()}): {this.ClientSpecificConfiguration}";
         }
     }
 }

@@ -32,6 +32,11 @@
             throw new System.NotImplementedException();
         }
 
+        public ICollection<BatchDefinition> GetBatchDefinitionsForDataMart(DataMart dataMart)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public Environment GetEnvironment(int? sourceConnectionId, int? destinationConnectionId)
         {
             throw new System.NotImplementedException();

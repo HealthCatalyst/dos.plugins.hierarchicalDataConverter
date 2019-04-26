@@ -26,6 +26,12 @@
 
         private const int SourceConnectionId = 5342;
 
+        [TestInitialize]
+        public void Initialize()
+        {
+            MockLogAppender.InitializeLogging();
+        }
+
         [TestMethod]
         public void GrandparentParentChild()
         {
@@ -55,11 +61,11 @@
             processingContextWrapperFactoryMock.Setup(mock => mock.CreateProcessingContextWrapper()).Returns(processingContextWrapperMock.Object);
             processingContextWrapperMock.Setup(mock => mock.GetIncrementalValue(It.IsAny<IncrementalConfiguration>())).Returns(new IncrementalValue { LastMaxIncrementalDate = DateTime.Now });
 
-            var loggingRepositoryMock = new Mock<ILoggingRepository>();
-
-            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object, loggingRepositoryMock.Object);
+            var converter = new HierarchicalDataTransformer(serviceClientMock.Object, processingContextWrapperFactoryMock.Object);
             var privateMethodRunner = new PrivateObject(converter);
-            object[] args = new object[] { this.GetNestedBindingLevel0Source(), new BindingExecution(), this.GetNestedDestinationEntity() };
+            BatchExecution batchExecution = new BatchExecution();
+            EntityExecution entityExecution = new EntityExecution { BatchExecution = batchExecution };
+            object[] args = new object[] { this.GetNestedBindingLevel0Source(), new BindingExecution{BatchExecution = batchExecution, EntityExecution = entityExecution,Id= 1, SourceConnectionId  = 1, BindingId = 1, BindingName = "adHoc"}, this.GetNestedDestinationEntity() };
 
             var jobData = ((Task<JobData>)privateMethodRunner.Invoke("GetJobData", args)).Result;
 
